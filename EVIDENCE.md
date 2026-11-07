@@ -190,3 +190,5 @@ repository for both.
   owner passes.
 - An empty commit was **CANCELED** on both projects: "the commit didn't affect this project". Both projects have
   `enableAffectedProjectsDeployments: true`. `vercel redeploy <canceled-deployment-url>` built it.
+- A docs-only commit (`3e3da61`, only `EVIDENCE.md` changed) still built **both** projects, a Production and a Preview each,
+  all READY. Files outside the apps count as affecting every project; only a commit with no file changes was skipped.
