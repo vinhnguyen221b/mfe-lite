@@ -1,6 +1,9 @@
 # MFE Lite
 
 The smallest honest demo of [Vercel Microfrontends](https://vercel.com/docs/microfrontends) on the Hobby plan, cost $0.
+
+**Live demo:** https://mfe-lite-shell.vercel.app · **Interactive lab:** https://mfe-lite-shell.vercel.app/lab.html
+
 It shows the three things that matter and nothing else:
 
 1. **One domain** in front of two independently built Next.js apps.
@@ -85,3 +88,7 @@ Blog assets load under `/vc-ap-<hash>/_next/...`, the hashed prefix `withMicrofr
 
 - [docs/architecture.md](docs/architecture.md): request flow, the two projects and their settings, local vs production.
 - [apps/shell/public/lab.html](apps/shell/public/lab.html), live at https://mfe-lite-shell.vercel.app/lab.html: a self-contained interactive lab served by the shell as a static file: overview, animated request flow with a path picker, the recorded checks, and an eight-rule cheat sheet for `microfrontends.json`, the proxy matcher and cross-zone links.
+
+## License
+
+[MIT](LICENSE)
