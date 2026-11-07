@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MFE Lite Lab</title>
+<meta name="description" content="Interactive lab for MFE Lite: two Next.js zones behind one domain on Vercel Microfrontends (Hobby plan).">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: blueprint sheet, four sheets.
+   Sticky header with tabs; each sheet = head, optional player, SVG stage on grid paper, ledger. */
+:root{
+  --bg:#eef2f6; --surface:#ffffff; --surface-2:#f6f8fb; --ink:#0f1b2d; --muted:#5b6779; --line:#d6dde8; --grid:#e3e8f0;
+  --accent:#0b8a6e; --accent-soft:#d8f2ea; --accent-ink:#06624e;
+  --info:#2b5fd9; --info-soft:#e1e9fb; --info-ink:#1d47aa; --warn:#b8720a; --warn-soft:#fdf0d8; --danger:#c43a35; --danger-soft:#fbe3e1; --ok:#1f8f4e; --ok-soft:#dcf3e5;
+  --font:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:14px; --shadow:0 1px 2px rgba(15,27,45,.05),0 10px 30px -18px rgba(15,27,45,.25);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0a111d; --surface:#111a2b; --surface-2:#162136; --ink:#e7ecf4; --muted:#94a1b5; --line:#26324a; --grid:#1b2740;
+  --accent:#3bd4b8; --accent-soft:#113b33; --accent-ink:#9ff0df;
+  --info:#8fb0ff; --info-soft:#17264a; --info-ink:#b9cdff; --warn:#f2bf5a; --warn-soft:#3a2b10; --danger:#f58b84; --danger-soft:#3d1a18; --ok:#6fd99c; --ok-soft:#133526;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 12px 32px -18px rgba(0,0,0,.8); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a111d; --surface:#111a2b; --surface-2:#162136; --ink:#e7ecf4; --muted:#94a1b5; --line:#26324a; --grid:#1b2740;
+  --accent:#3bd4b8; --accent-soft:#113b33; --accent-ink:#9ff0df;
+  --info:#8fb0ff; --info-soft:#17264a; --info-ink:#b9cdff; --warn:#f2bf5a; --warn-soft:#3a2b10; --danger:#f58b84; --danger-soft:#3d1a18; --ok:#6fd99c; --ok-soft:#133526;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 12px 32px -18px rgba(0,0,0,.8); color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+a{color:var(--accent-ink)}
+code,.mono{font-family:var(--mono);font-size:.88em}
+code{background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:.05em .3em;overflow-wrap:anywhere}
+pre{margin:0;font-family:var(--mono);font-size:.8rem;line-height:1.5;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:.8rem 1rem;overflow-x:auto;tab-size:2}
+pre code{background:none;border:0;padding:0;font-size:inherit;overflow-wrap:normal}
+h1,h2,h3{text-wrap:balance;line-height:1.2;margin:0;letter-spacing:-.01em}
+h1{font-size:1.25rem;font-weight:800}
+h2{font-size:1.5rem;font-weight:800}
+h3{font-size:1rem;font-weight:700}
+p{margin:0}
+.wrap{max-width:1120px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+.ic{width:1.1em;height:1.1em;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1.5rem;padding-block:.6rem}
+.brand{display:flex;align-items:center;gap:.65rem;min-width:0}
+.brand .mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--info));display:grid;place-items:center;color:#fff;flex:none}
+.brand .mark .ic{width:20px;height:20px;stroke-width:2.2}
+.brand small{display:block;color:var(--muted);font-size:.75rem;font-weight:600;letter-spacing:.02em}
+nav.tabs{display:flex;gap:.2rem;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-weight:700;font-size:.86rem;padding:.5rem .8rem;border-radius:999px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:.4rem}
+nav.tabs button[aria-selected="true"]{background:var(--accent-soft);color:var(--accent-ink)}
+:where(button,input,select,summary):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+main .wrap{padding-block:1.5rem 3.5rem}
+section[role="tabpanel"]{display:grid;gap:1.1rem}
+section[role="tabpanel"][hidden]{display:none}
+.sheet-head{display:grid;gap:.4rem;max-width:72ch}
+.eyebrow{display:inline-flex;align-items:center;gap:.4rem;color:var(--accent-ink);font-weight:800;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase}
+.lead{color:var(--muted);font-size:1rem}
+.grid{display:grid;gap:1rem}
+.cols-3{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.cols-2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.1rem;min-width:0;display:grid;gap:.5rem;align-content:start}
+.card h3{display:flex;align-items:center;gap:.5rem}
+.card ul{margin:0;padding-left:1.1rem}
+.card li{margin:.2rem 0}
+.card p,.card li{font-size:.9rem}
+.card .muted{color:var(--muted)}
+.card.zone-shell{border-top:3px solid var(--accent)}
+.card.zone-blog{border-top:3px solid var(--info)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:.25rem .8rem;font-size:.86rem}
+.kv dt{color:var(--muted);font-weight:600}
+.kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.fact{display:grid;grid-template-columns:auto 1fr;gap:.75rem;align-items:center}
+.fact .glyph{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink)}
+.fact .glyph .ic{width:22px;height:22px}
+.fact b{display:block;font-size:1.02rem;font-weight:800}
+.fact span{color:var(--muted);font-size:.85rem}
+
+figure{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:0;overflow:hidden;min-width:0;box-shadow:var(--shadow)}
+figure .frame{overflow-x:auto;background:
+  linear-gradient(var(--grid) 1px,transparent 1px) 0 0/24px 24px,
+  linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/24px 24px, var(--surface-2)}
+figure svg{display:block;max-width:100%;height:auto;min-width:720px}
+figure svg.small{min-width:600px}
+figcaption{color:var(--muted);font-size:.84rem;padding:.75rem 1rem;border-top:1px solid var(--line)}
+
+.player{display:flex;flex-wrap:wrap;gap:.6rem 1rem;align-items:center;padding:.7rem 1rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.player label{display:inline-flex;align-items:center;gap:.4rem;font-size:.86rem;font-weight:600}
+select{font:inherit;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:.35rem .5rem;font-family:var(--mono);font-size:.84rem}
+.btn{appearance:none;font:inherit;font-weight:700;font-size:.86rem;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:.45rem .85rem;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.45;cursor:default}
+.spacer{flex:1 1 auto}
+
+.ledger{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:.4rem 0;min-height:9rem;max-height:22rem;overflow:auto}
+.ledger .row{display:grid;grid-template-columns:1.6rem 1fr;gap:.6rem;padding:.5rem 1rem;border-top:1px solid var(--line);font-size:.86rem;align-items:start}
+.ledger .row:first-child{border-top:0}
+.ledger .row .ic{width:1.1rem;height:1.1rem;margin-top:.15rem}
+.ledger .row.ok .ic{color:var(--ok)} .ledger .row.warn .ic{color:var(--warn)} .ledger .row.info .ic{color:var(--info)} .ledger .row.shell .ic{color:var(--accent)} .ledger .row.blog .ic{color:var(--info)}
+.ledger .row b{font-family:var(--mono);font-weight:600;font-size:.78rem;color:var(--muted);display:block;overflow-wrap:anywhere}
+.ledger .row div{min-width:0}
+.ledger .empty{padding:1rem;color:var(--muted);font-size:.9rem}
+.verdict{display:flex;flex-wrap:wrap;gap:.6rem .9rem;align-items:center;padding:.8rem 1rem;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);font-size:.9rem}
+.verdict .caption{color:var(--muted);min-width:0;overflow-wrap:anywhere}
+.badge{display:inline-flex;align-items:center;gap:.35rem;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:.25rem .6rem;border-radius:8px;white-space:nowrap}
+.badge.shell{background:var(--accent-soft);color:var(--accent-ink)} .badge.blog{background:var(--info-soft);color:var(--info-ink)} .badge.ok{background:var(--ok-soft);color:var(--ok)} .badge.warn{background:var(--warn-soft);color:var(--warn)} .badge.dim{background:var(--surface-2);color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;padding:.5rem .6rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:700;color:var(--muted);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+td .mono{font-size:.8rem}
+tbody tr:last-child td{border-bottom:0}
+.table-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.table-wrap table{min-width:560px}
+.table-wrap caption{text-align:left;padding:.75rem .9rem .2rem;font-weight:700;font-size:.9rem}
+
+.two{display:grid;gap:1rem;grid-template-columns:minmax(0,1.4fr) minmax(280px,1fr)}
+@media (max-width:860px){.two{grid-template-columns:1fr}}
+
+.rules{counter-reset:rule;list-style:none;margin:0;padding:0;display:grid;gap:.6rem}
+.rules li{counter-increment:rule;display:grid;grid-template-columns:2.4rem 1fr;gap:.8rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:.8rem 1rem;min-width:0;font-size:.9rem}
+.rules li::before{content:counter(rule,decimal-leading-zero);font-family:var(--mono);font-weight:600;font-size:.9rem;width:2.4rem;height:2.4rem;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink)}
+.rules li div{min-width:0}
+.rules li b{display:block;font-weight:800;margin-bottom:.15rem}
+.rules li.bad::before{background:var(--danger-soft);color:var(--danger)}
+.rules li.hobby::before{background:var(--warn-soft);color:var(--warn)}
+
+/* SVG system (styled from page CSS) */
+svg text{font-family:var(--font);fill:var(--ink);font-size:12.5px;font-weight:600}
+svg text.lbl{font-size:11px;fill:var(--muted);font-weight:600}
+svg text.mono{font-family:var(--mono);font-size:11px;font-weight:600}
+svg text.title{font-size:13px;font-weight:800}
+svg .edge{stroke:var(--muted);stroke-width:1.6;fill:none;transition:stroke .25s}
+svg .edge.dashed{stroke-dasharray:5 4}
+svg .edge.lit{stroke:var(--accent);stroke-width:2.4}
+svg .edge.lit.blog{stroke:var(--info)}
+svg .edge.off{opacity:.3}
+svg .glyph{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+svg .station rect{fill:var(--surface);stroke:var(--line);stroke-width:1.4;transition:stroke .25s,fill .25s}
+svg .station .glyph{color:var(--muted)}
+svg .station.shell rect{stroke:var(--accent)} svg .station.blog rect{stroke:var(--info)}
+svg .station.active rect{stroke:var(--accent);fill:var(--accent-soft);stroke-width:2}
+svg .station.active .glyph{color:var(--accent-ink)}
+svg .station.active.blog rect{stroke:var(--info);fill:var(--info-soft)}
+svg .station.active.blog .glyph{color:var(--info-ink)}
+svg .station.pass rect{stroke:var(--ok)} svg .station.pass .glyph{color:var(--ok)}
+svg .station.skip rect{stroke-dasharray:4 3} svg .station.skip rect,svg .station.skip text,svg .station.skip .glyph{opacity:.5}
+svg .packet{fill:var(--accent);stroke:var(--surface);stroke-width:3;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
+svg .packet.blog{fill:var(--info)}
+svg .band{fill:var(--surface);stroke:var(--line);stroke-dasharray:5 4}
+svg .band.shell{stroke:var(--accent)} svg .band.blog{stroke:var(--info)}
+svg .tag{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+svg .panel rect.box{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+svg .prow rect{fill:transparent;stroke:transparent;stroke-width:1.2;transition:fill .25s,stroke .25s}
+svg .prow text{font-size:10.5px}
+svg .prow.hit rect{fill:var(--accent-soft);stroke:var(--accent)}
+svg .prow.hit.blog rect{fill:var(--info-soft);stroke:var(--info)}
+svg .prow.miss{opacity:.35}
+svg text.halo{paint-order:stroke;stroke:var(--surface-2);stroke-width:4px;stroke-linejoin:round}
+.card.step{grid-template-columns:auto 1fr;gap:.8rem;align-items:start}
+.card.step .num{width:2.2rem;height:2.2rem;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink);font-family:var(--mono);font-weight:600}
+.card.step h3{margin-bottom:.25rem}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+@media (max-width:640px){body{font-size:14.5px}h2{font-size:1.3rem}nav.tabs{flex-basis:100%}nav.tabs button{padding:.45rem .65rem}nav.tabs button .ic{display:none}.rules li{grid-template-columns:2rem 1fr;gap:.6rem}.rules li::before{width:2rem;height:2rem;font-size:.8rem}}
+</style>
+</head>
+<body>
+
+<svg class="sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>
+  </defs>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.2"/><circle cx="18" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M6 8.5V13a4 4 0 0 0 4 4h5.5M18 8.5v7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></symbol>
+  <symbol id="i-step" viewBox="0 0 24 24"><path d="M6 5l9 7-9 7zM18 5v14"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 9a4 4 0 0 1 0 9H7z"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24"><path d="M4 17l6-5-6-5M12 19h8"/></symbol>
+  <symbol id="i-git" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="7" r="2.2"/><path d="M6 8.2v7.6M18 9.2c0 4-12 3-12 6.6"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v4M12 17h.01"/></symbol>
+</svg>
+
+<header class="top"><div class="wrap">
+  <div class="brand"><div class="mark"><svg class="ic"><use href="#i-layers"/></svg></div><div><h1>MFE Lite Lab</h1><small>Two zones · one domain · Vercel Hobby</small></div></div>
+  <nav class="tabs" role="tablist" aria-label="Sheets">
+    <button role="tab" id="tab-btn-overview" data-tab="overview" aria-selected="true" aria-controls="tab-overview"><svg class="ic"><use href="#i-layers"/></svg>Overview</button>
+    <button role="tab" id="tab-btn-request" data-tab="request" aria-selected="false" aria-controls="tab-request"><svg class="ic"><use href="#i-route"/></svg>Request</button>
+    <button role="tab" id="tab-btn-checks" data-tab="checks" aria-selected="false" aria-controls="tab-checks"><svg class="ic"><use href="#i-check"/></svg>Checks</button>
+    <button role="tab" id="tab-btn-cheatsheet" data-tab="cheatsheet" aria-selected="false" aria-controls="tab-cheatsheet"><svg class="ic"><use href="#i-list"/></svg>Cheat sheet</button>
+  </nav>
+</div></header>
+
+<main><div class="wrap">
+
+<!-- ================= OVERVIEW ================= -->
+<section id="tab-overview" role="tabpanel" aria-labelledby="tab-btn-overview">
+  <div class="sheet-head">
+    <span class="eyebrow"><svg class="ic"><use href="#i-layers"/></svg>Sheet 1 · Overview</span>
+    <h2>Two Next.js apps. One domain. Zero dollars.</h2>
+    <p class="lead">MFE Lite is the smallest honest demo of Vercel Microfrontends. A <strong>shell</strong> project is the default app and a <strong>blog</strong> project is the child zone. Visitors only see <code>mfe-lite-shell.vercel.app</code>; the group <code>mfe-lite</code> decides which project answers each path.</p>
+  </div>
+
+  <figure>
+    <div class="frame">
+    <svg class="small" viewBox="0 0 760 268" role="img" aria-label="One domain in front of two projects: the blog owns /blog and /docs and everything under them; the shell owns / and every path nobody claims. Vercel decides before any code runs.">
+      <!-- domain band -->
+      <rect x="40" y="18" width="680" height="46" rx="12" class="band"/>
+      <g transform="translate(62 41)" color="var(--muted)"><svg class="glyph" width="20" height="20" viewBox="0 0 24 24" x="-10" y="-10"><use href="#i-globe"/></svg></g>
+      <text x="86" y="37" class="title">https://mfe-lite-shell.vercel.app</text>
+      <text x="86" y="54" class="lbl">one production domain · microfrontends group "mfe-lite" (Hobby: 1 group, 2 projects)</text>
+      <!-- edges -->
+      <path d="M220 64v36" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
+      <path d="M540 64v36" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
+      <text x="212" y="88" class="lbl" text-anchor="end">everything else</text>
+      <text x="548" y="88" class="lbl">/blog, /docs and below</text>
+      <!-- shell project -->
+      <g class="station shell"><rect x="40" y="104" width="330" height="142" rx="14"/>
+        <g transform="translate(66 128)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-server"/></svg></g>
+        <text x="86" y="124" class="title">mfe-lite-shell · default app</text>
+        <text x="86" y="141" class="lbl">apps/shell · @mfe-lite/shell · local :3000</text>
+        <text x="60" y="168" class="mono">/ · every path nobody claims</text>
+        <text x="60" y="190" class="lbl">owns microfrontends.json</text>
+        <text x="60" y="206" class="lbl">assets /_next/ (no prefix)</text>
+        <text x="60" y="222" class="lbl">proxy.ts only stamps x-mfe-zone: shell</text>
+      </g>
+      <!-- blog project -->
+      <g class="station blog"><rect x="390" y="104" width="330" height="142" rx="14"/>
+        <g transform="translate(416 128)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-file"/></svg></g>
+        <text x="436" y="124" class="title">mfe-lite-blog · child zone</text>
+        <text x="436" y="141" class="lbl">apps/blog · @mfe-lite/blog · local :3001</text>
+        <text x="410" y="168" class="mono">/blog · /blog/:path* · /docs · /docs/:path*</text>
+        <text x="410" y="190" class="lbl">routed here by the group before any code runs</text>
+        <text x="410" y="206" class="lbl">assets /vc-ap-5d190e/_next/</text>
+        <text x="410" y="222" class="lbl">proxy.ts only stamps x-mfe-zone: blog</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>Ownership is decided by Vercel before any code runs: <code>/blog</code> and <code>/docs</code> go to the blog project, everything else to the shell. Neither app's code makes a routing decision.</figcaption>
+  </figure>
+
+  <div class="two">
+    <div class="card">
+      <h3><svg class="ic"><use href="#i-file"/></svg>apps/shell/microfrontends.json</h3>
+      <p class="muted">The only routing table. It lives in the default app, is read by <code>withMicrofrontends</code> at build time, and defines the group's paths. The default app has no <code>routing</code>: it owns whatever nobody else claims.</p>
+<pre><code>{
+  "$schema": "https://openapi.vercel.sh/microfrontends.json",
+  "applications": {
+    "mfe-lite-shell": {
+      "packageName": "@mfe-lite/shell",
+      "development": {
+        "fallback": "mfe-lite-shell.vercel.app",
+        "local": 3000
+      }
+    },
+    "mfe-lite-blog": {
+      "packageName": "@mfe-lite/blog",
+      "routing": [
+        { "group": "blog", "paths": ["/blog", "/blog/:path*"] },
+        { "group": "docs", "paths": ["/docs", "/docs/:path*"] }
+      ],
+      "development": { "local": 3001 }
+    }
+  },
+  "options": {
+    "localProxyPort": 3024
+  }
+}</code></pre>
+    </div>
+    <div class="grid">
+      <div class="card zone-shell">
+        <h3><svg class="ic"><use href="#i-server"/></svg>Shell · default app</h3>
+        <dl class="kv">
+          <dt>Package</dt><dd><code>@mfe-lite/shell</code></dd>
+          <dt>Paths</dt><dd><code>/</code> and every path nobody claims (including its 404 and <code>/lab.html</code>)</dd>
+          <dt>Vercel</dt><dd><code>mfe-lite-shell</code>, Root Directory <code>apps/shell</code></dd>
+          <dt>Owns</dt><dd><code>microfrontends.json</code>; a <code>proxy.ts</code> that only stamps the zone header</dd>
+        </dl>
+      </div>
+      <div class="card zone-blog">
+        <h3><svg class="ic"><use href="#i-file"/></svg>Blog · child zone</h3>
+        <dl class="kv">
+          <dt>Package</dt><dd><code>@mfe-lite/blog</code></dd>
+          <dt>Paths</dt><dd><code>/blog</code>, <code>/blog/*</code>, <code>/docs</code>, <code>/docs/*</code></dd>
+          <dt>Vercel</dt><dd><code>mfe-lite-blog</code>, Root Directory <code>apps/blog</code></dd>
+          <dt>Assets</dt><dd><code>/vc-ap-5d190e/_next/…</code> (hashed prefix from <code>withMicrofrontends</code>)</dd>
+        </dl>
+      </div>
+      <div class="card">
+        <h3><svg class="ic"><use href="#i-box"/></svg>packages/ui</h3>
+        <p class="muted">The shared header. Its links use <code>Link</code> from <code>@vercel/microfrontends/next/client</code>: inside a zone a link stays client-side, into the other zone it becomes a full navigation. A badge shows <em>served by: shell | blog</em>, the same fact as the <code>x-mfe-zone</code> header.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid cols-3">
+    <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-git"/></svg></div><div><b>Independent deploys</b><span>Each app builds, deploys and rolls back as its own project; a failed blog build leaves the shell up. Every push still builds both.</span></div></div>
+    <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-globe"/></svg></div><div><b>One URL</b><span>Visitors, cookies and links all live on the shell's domain. The blog project's own domain is never used by visitors.</span></div></div>
+    <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-route"/></svg></div><div><b>One routing file</b><span><code>microfrontends.json</code> lists the paths the blog owns; Vercel applies it before any app code runs. <a href="#request">Follow a request →</a></span></div></div>
+  </div>
+</section>
+
+<!-- ================= REQUEST ================= -->
+<section id="tab-request" role="tabpanel" aria-labelledby="tab-btn-request" hidden>
+  <div class="sheet-head">
+    <span class="eyebrow"><svg class="ic"><use href="#i-route"/></svg>Sheet 2 · Request</span>
+    <h2>One decision, before any code runs.</h2>
+    <p class="lead">Vercel's routing layer matches the path against the table in <code>microfrontends.json</code> and picks the project. It runs no application code, so neither app ever forwards a request to the other. The project that answers stamps <code>x-mfe-zone</code> on the response, so the result can be checked with curl.</p>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card step"><span class="num">1</span><div><h3>Vercel routing picks the project</h3><p class="muted">Reads the <code>routing</code> entries of <code>microfrontends.json</code>. <code>/blog</code>, <code>/docs</code> and every path under them belong to the blog, so the request goes straight to the blog project. Any other path has no entry and goes to the default app, the shell.</p></div></div>
+    <div class="card step"><span class="num">2</span><div><h3>The project answers</h3><p class="muted">The chosen project renders the page. Its <code>proxy.ts</code> decides nothing: it only sets <code>x-mfe-zone: shell</code> or <code>x-mfe-zone: blog</code> on the response. A path nobody has a page for gets the shell's 404.</p></div></div>
+  </div>
+
+  <div class="player">
+    <label for="rq-path">Path
+      <select id="rq-path">
+        <option value="/">/</option>
+        <option value="/blog" selected>/blog</option>
+        <option value="/blog/hello-world">/blog/hello-world</option>
+        <option value="/docs">/docs</option>
+        <option value="/does-not-exist">/does-not-exist</option>
+      </select>
+    </label>
+    <span class="spacer"></span>
+    <button class="btn primary" id="rq-play"><svg class="ic"><use href="#i-play"/></svg>Play</button>
+    <button class="btn" id="rq-step"><svg class="ic"><use href="#i-step"/></svg>Step</button>
+    <button class="btn" id="rq-reset"><svg class="ic"><use href="#i-reset"/></svg>Reset</button>
+  </div>
+
+  <figure>
+    <div class="frame">
+    <svg id="rq-svg" viewBox="0 0 880 280" role="img" aria-label="Request path: browser, the shell domain, Vercel routing with its routing table, then either the shell project or the blog project">
+      <!-- step marker -->
+      <text x="475" y="36" class="lbl" text-anchor="middle">THE ONLY ROUTING DECISION</text>
+      <!-- edges -->
+      <path id="e-browser-domain" d="M140 90h28" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
+      <path id="e-domain-routing" d="M350 90h28" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
+      <path id="e-routing-shell" d="M570 90h38" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
+      <path id="e-routing-blog" d="M584 190 C 598 190, 594 232, 608 232" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
+      <text x="589" y="82" class="lbl" text-anchor="middle">else</text>
+      <text x="590" y="182" class="lbl halo">match</text>
+      <!-- stations -->
+      <g class="station" data-st="browser"><rect x="20" y="58" width="120" height="64" rx="12"/>
+        <g transform="translate(42 90)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-user"/></svg></g>
+        <text x="60" y="87" class="title">Browser</text><text x="60" y="104" class="lbl">GET path</text></g>
+      <g class="station" data-st="domain"><rect x="170" y="58" width="180" height="64" rx="12"/>
+        <g transform="translate(192 90)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-globe"/></svg></g>
+        <text x="210" y="81" class="title">Shell domain</text><text x="210" y="96" class="mono">mfe-lite-shell</text><text x="210" y="110" class="mono">.vercel.app</text></g>
+      <g class="station" data-st="routing"><rect x="380" y="58" width="190" height="64" rx="12"/>
+        <g transform="translate(402 90)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-route"/></svg></g>
+        <text x="422" y="81" class="title">Vercel routing</text><text x="422" y="96" class="lbl">group mfe-lite</text><text x="422" y="110" class="lbl">matches paths only</text></g>
+      <g class="station shell" data-st="shell"><rect x="610" y="58" width="250" height="64" rx="12"/>
+        <g transform="translate(632 90)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-server"/></svg></g>
+        <text x="652" y="81" class="title">Shell · default app</text><text x="652" y="96" class="lbl">pages: /, 404 for the rest</text><text x="652" y="110" class="lbl">proxy.ts stamps the zone</text></g>
+      <g class="station blog" data-st="blog"><rect x="610" y="200" width="250" height="64" rx="12"/>
+        <g transform="translate(632 232)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-file"/></svg></g>
+        <text x="652" y="223" class="title">Blog · child zone</text><text x="652" y="238" class="lbl">pages: /blog/*, /docs/*</text><text x="652" y="252" class="lbl">proxy.ts stamps the zone</text></g>
+      <!-- routing table panel -->
+      <g class="panel" id="rq-table"><rect x="372" y="136" width="212" height="124" rx="10" class="box"/>
+        <text x="384" y="154" class="lbl">routing table (microfrontends.json)</text>
+        <g class="prow blog" data-row="blog"><rect x="380" y="162" width="196" height="26" rx="6"/><text x="388" y="179" class="mono">/blog, /blog/:path* → blog</text></g>
+        <g class="prow blog" data-row="docs"><rect x="380" y="192" width="196" height="26" rx="6"/><text x="388" y="209" class="mono">/docs, /docs/:path* → blog</text></g>
+        <g class="prow" data-row="else"><rect x="380" y="222" width="196" height="26" rx="6"/><text x="388" y="239" class="mono">anything else → shell</text></g>
+      </g>
+      <!-- response tag -->
+      <g id="rq-tag" opacity="0"><rect x="20" y="150" width="330" height="54" rx="10" class="tag"/>
+        <text x="34" y="171" class="lbl">response</text>
+        <text id="rq-tag-text" x="34" y="190" class="mono">200 · x-mfe-zone: shell</text></g>
+      <!-- packet -->
+      <circle id="rq-packet" class="packet" cx="80" cy="90" r="7" opacity="0"/>
+    </svg>
+    </div>
+    <figcaption id="rq-caption">The highlighted row is the rule that matched.</figcaption>
+  </figure>
+
+  <div class="verdict" id="rq-verdict"><span class="badge dim" id="rq-badge">idle</span><span class="caption" id="rq-summary">Press Play to send the request.</span></div>
+  <div class="ledger" id="rq-ledger" aria-live="polite"><div class="empty">The ledger fills as the dot moves. Each row is one hop and what the real code does there.</div></div>
+
+  <div class="table-wrap">
+    <table>
+      <caption>Every path at a glance</caption>
+      <thead><tr><th>Path</th><th>Routing table</th><th>Answered by</th><th>Response</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">/</td><td>no entry → default app</td><td><span class="badge shell">shell</span></td><td class="mono">200</td></tr>
+        <tr><td class="mono">/blog</td><td><code>/blog</code></td><td><span class="badge blog">blog</span></td><td class="mono">200</td></tr>
+        <tr><td class="mono">/blog/hello-world</td><td><code>/blog/:path*</code></td><td><span class="badge blog">blog</span></td><td class="mono">200</td></tr>
+        <tr><td class="mono">/docs</td><td><code>/docs</code></td><td><span class="badge blog">blog</span></td><td class="mono">200</td></tr>
+        <tr><td class="mono">/does-not-exist</td><td>no entry → default app</td><td><span class="badge shell">shell</span></td><td class="mono">404 (the shell's not-found page)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ================= CHECKS ================= -->
+<section id="tab-checks" role="tabpanel" aria-labelledby="tab-btn-checks" hidden>
+  <div class="sheet-head">
+    <span class="eyebrow"><svg class="ic"><use href="#i-check"/></svg>Sheet 3 · Checks</span>
+    <h2>Every claim has a curl behind it.</h2>
+    <p class="lead" id="ck-lead">Recorded on 2026-11-06 against <code>https://mfe-lite-shell.vercel.app</code>, after both projects were built from Git. Source: <code>EVIDENCE.md</code> in the repo. Toolchain: Vercel CLI 65.2.0, <code>@vercel/microfrontends</code> 2.4.2, <code>next</code> 16.4.3.</p>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <caption>Production requests</caption>
+      <thead><tr><th>Path</th><th>Expected zone</th><th>Observed</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">/</td><td><span class="badge shell">shell</span></td><td class="mono">200 · x-mfe-zone: shell</td><td>default app; HTML references <code>/_next/static/…</code> with no prefix</td></tr>
+        <tr><td class="mono">/blog</td><td><span class="badge blog">blog</span></td><td class="mono">200 · x-mfe-zone: blog</td><td><code>&lt;h1&gt;Blog&lt;/h1&gt;</code>; HTML references <code>/vc-ap-5d190e/_next/…</code></td></tr>
+        <tr><td class="mono">/blog/hello-world</td><td><span class="badge blog">blog</span></td><td class="mono">200 · x-mfe-zone: blog</td><td><code>/blog/:path*</code></td></tr>
+        <tr><td class="mono">/docs</td><td><span class="badge blog">blog</span></td><td class="mono">200 · x-mfe-zone: blog</td><td>routed by the group</td></tr>
+        <tr><td class="mono">/docs/routing</td><td><span class="badge blog">blog</span></td><td class="mono">200 · x-mfe-zone: blog</td><td><code>/docs/:path*</code></td></tr>
+        <tr><td class="mono">/does-not-exist</td><td><span class="badge shell">shell</span></td><td class="mono">404 · x-mfe-zone: shell</td><td>nobody claims it, so the shell answers with its 404</td></tr>
+        <tr><td class="mono">/vc-ap-5d190e/_next/static/immutable/chunks/01bz81oyfyjyz.js</td><td><span class="badge blog">blog</span></td><td class="mono">200 · application/javascript</td><td>child asset served through the shell's domain under the hashed prefix</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="two">
+    <div class="table-wrap">
+      <table>
+        <caption>The five checks</caption>
+        <thead><tr><th>#</th><th>Check</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">1</td><td><code>/</code> → <code>x-mfe-zone: shell</code></td><td><span class="badge ok">pass</span></td></tr>
+          <tr><td class="mono">2</td><td><code>/blog</code>, <code>/blog/*</code> → <code>x-mfe-zone: blog</code></td><td><span class="badge ok">pass</span></td></tr>
+          <tr><td class="mono">3</td><td><code>/docs</code>, <code>/docs/*</code> → <code>x-mfe-zone: blog</code></td><td><span class="badge ok">pass</span></td></tr>
+          <tr><td class="mono">4</td><td>an unclaimed path → the shell's 404</td><td><span class="badge ok">pass</span></td></tr>
+          <tr><td class="mono">5</td><td>child assets under <code>/vc-ap-&lt;hash&gt;/</code></td><td><span class="badge ok">pass</span> <span class="mono">vc-ap-5d190e</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3><svg class="ic"><use href="#i-bolt"/></svg>Local toolchain results</h3>
+      <dl class="kv">
+        <dt><code>pnpm test</code></dt><dd>5 passed (routing contract, shell proxy matcher)</dd>
+        <dt><code>pnpm typecheck</code></dt><dd>3 packages successful</dd>
+        <dt><code>pnpm build</code></dt><dd>shell: <code>/</code>, Proxy · blog: <code>/</code>, <code>/blog</code>, <code>/blog/[slug]</code>, <code>/docs</code>, <code>/docs/[slug]</code> (four articles), Proxy</dd>
+        <dt>Builds</dt><dd>Git deploys of each project take about 20 s; every push to <code>main</code> builds both projects</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><svg class="ic"><use href="#i-terminal"/></svg>Run the same checks locally</h3>
+    <p class="muted">Turborepo starts the shell on 3000, the blog on 3001 and the microfrontends proxy on 3024. The proxy reads <code>microfrontends.json</code> and does locally what Vercel's routing layer does in production.</p>
+<pre><code>pnpm install
+pnpm dev        # shell :3000, blog :3001, microfrontends proxy :3024
+
+curl -sI localhost:3024/        | grep x-mfe-zone   # shell
+curl -sI localhost:3024/blog    | grep x-mfe-zone   # blog
+curl -sI localhost:3024/docs    | grep x-mfe-zone   # blog
+
+pnpm test       # validateRouting + the shell proxy's matcher
+pnpm typecheck
+pnpm build</code></pre>
+  </div>
+</section>
+
+<!-- ================= CHEAT SHEET ================= -->
+<section id="tab-cheatsheet" role="tabpanel" aria-labelledby="tab-btn-cheatsheet" hidden>
+  <div class="sheet-head">
+    <span class="eyebrow"><svg class="ic"><use href="#i-list"/></svg>Sheet 4 · Cheat sheet</span>
+    <h2>Eight rules this repo follows.</h2>
+    <p class="lead">Each rule is enforced in this repo by the contract tests in <code>apps/shell/__tests__/routing.test.ts</code> or was learned the hard way while deploying it (see <code>EVIDENCE.md</code>).</p>
+  </div>
+
+  <ol class="rules">
+    <li><div><b>One file, in the default app.</b> <code>microfrontends.json</code> lives in <code>apps/shell</code>. Every application is keyed by its Vercel project name and carries its <code>packageName</code>; only the default app gets <code>development.fallback</code> and no <code>routing</code> block: it owns whatever nobody else claims.</div></li>
+    <li><div><b>Children declare routing groups.</b> Each child lists <code>routing: [{ group, paths }]</code>. Paths are path-to-regexp patterns, so list both the bare path and its wildcard: <code>["/blog", "/blog/:path*"]</code>, <code>["/docs", "/docs/:path*"]</code>.</div></li>
+    <li><div><b>Routing happens before any code runs.</b> Vercel matches the path and sends the request to one project. The shell never sees <code>/blog</code> or <code>/docs</code>, and no app forwards requests to the other. <code>validateRouting</code> checks every sample path.</div></li>
+    <li class="bad"><div><b>The shell's matcher must skip <code>_next/</code>, <code>vc-ap-</code> and child paths.</b> The catch-all is <code>/((?!_next/|vc-ap-|favicon.ico|blog/|blog$|docs/|docs$).*)</code>. Without the exclusions the shell proxy would shadow the blog's pages and its <code>/vc-ap-5d190e/_next/…</code> assets. <code>blog/|blog$</code> rather than <code>blog</code>, so <code>/blogroll</code> would still reach the shell.</div></li>
+    <li><div><b>Wrap <code>next.config</code> with <code>withMicrofrontends</code>.</b> It reads the JSON, injects <code>MFE_CONFIG</code>, <code>NEXT_PUBLIC_MFE_CURRENT_APPLICATION</code> and the client's copy of the routing table at build time, and gives each child a hashed asset prefix <code>vc-ap-&lt;hash&gt;</code>.</div></li>
+    <li><div><b>Link across zones with the microfrontends <code>Link</code>.</b> <code>Link</code> from <code>@vercel/microfrontends/next/client</code> renders <code>next/link</code> inside a zone and a plain <code>&lt;a&gt;</code> (a full page load) into the other zone. <code>PrefetchCrossZoneLinks</code> in each layout lets the browser prefetch those pages.</div></li>
+    <li class="hobby"><div><b>Hobby = one group of two projects.</b> One microfrontends group per account, two projects per group, first two included for free. <code>create-group</code> must list the default app among <code>--project</code> too, or it answers "Default app must be one of the selected projects".</div></li>
+    <li class="hobby"><div><b>Redeploy after <code>create-group</code>.</b> Deployments built before the group existed ignore <code>microfrontends.json</code>: the shell answered 404 on <code>/docs</code> until both projects were redeployed once. Verify with <code>curl -sI $HOST/docs | grep x-mfe-zone</code>.</div></li>
+  </ol>
+
+  <div class="grid cols-2">
+    <div class="card"><h3><svg class="ic"><use href="#i-check"/></svg>validateRouting</h3><p class="muted">From <code>@vercel/microfrontends/next/testing</code>. Each sample path lands in the expected app: <code>/</code>, <code>/does-not-exist</code>, <code>/lab.html</code> in the shell; <code>/blog</code>, <code>/blog/hello-world</code>, <code>/docs</code>, <code>/docs/getting-started</code> in the blog. None of the blog's paths may fall through to the shell.</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-check"/></svg>unstable_doesMiddlewareMatch</h3><p class="muted">From <code>next/experimental/testing/server</code>. The shell proxy's matcher runs for the shell's paths and skips <code>/blog</code>, <code>/docs</code>, <code>/vc-ap-…</code> and <code>/_next/…</code>, but not <code>/blogroll</code>.</p></div>
+  </div>
+
+  <div class="card">
+    <h3><svg class="ic"><use href="#i-link"/></svg>Learn more</h3>
+    <p class="muted">In the repo: <code>README.md</code>, <code>EVIDENCE.md</code>, <code>docs/architecture.md</code>. Vercel docs: <a href="https://vercel.com/docs/microfrontends">Microfrontends</a>.</p>
+  </div>
+</section>
+
+</div></main>
+
+<script>
+(function(){
+  'use strict';
+  const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (s, r) => (r || document).querySelector(s);
+  const sleep = ms => new Promise(r => setTimeout(r, REDUCED ? 0 : ms));
+
+  /* ---------- tabs ---------- */
+  const TABS = ['overview', 'request', 'checks', 'cheatsheet'];
+  const tabButtons = [...document.querySelectorAll('nav.tabs button')];
+  function showTab(name){
+    if (!TABS.includes(name)) name = 'overview';
+    tabButtons.forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+    TABS.forEach(t => { $('#tab-' + t).hidden = t !== name; });
+    try { history.replaceState(null, '', '#' + name); } catch (e) {}
+  }
+  tabButtons.forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+  showTab((location.hash || '').replace('#', ''));
+  addEventListener('hashchange', () => showTab((location.hash || '').replace('#', '')));
+
+  /* ---------- request stepper ---------- */
+  const svg = $('#rq-svg'), packet = $('#rq-packet'), tag = $('#rq-tag'), tagText = $('#rq-tag-text');
+  const ledger = $('#rq-ledger'), badge = $('#rq-badge'), summary = $('#rq-summary'), caption = $('#rq-caption');
+  const pathSel = $('#rq-path');
+  const btnPlay = $('#rq-play'), btnStep = $('#rq-step'), btnReset = $('#rq-reset');
+  const CENTER = { browser:[80,90], domain:[260,90], routing:[475,90], table:[475,198], shell:[842,90], blog:[842,232] };
+  const ICON = { ok:'#i-check', info:'#i-route', send:'#i-send', server:'#i-server', file:'#i-file', cloud:'#i-cloud', warn:'#i-alert', bolt:'#i-bolt' };
+  const CAPTION = 'The highlighted row is the rule that matched.';
+
+  function station(name){ return svg.querySelector(`.station[data-st="${name}"]`); }
+  function edge(id){ return svg.querySelector('#' + id); }
+  function hit(panel, name){ svg.querySelectorAll(`#${panel} .prow`).forEach(r => r.classList.add(r.dataset.row === name ? 'hit' : 'miss')); }
+  function setBadge(cls, text){ badge.className = 'badge ' + cls; badge.textContent = text; }
+  function row(kind, icon, title, text){
+    const d = document.createElement('div');
+    d.className = 'row ' + kind;
+    d.innerHTML = `<svg class="ic"><use href="${ICON[icon] || ICON.info}"/></svg><div><b></b><span></span></div>`;
+    d.querySelector('b').textContent = title;
+    d.querySelector('span').textContent = text;
+    if (ledger.querySelector('.empty')) ledger.innerHTML = '';
+    ledger.appendChild(d);
+    ledger.scrollTop = ledger.scrollHeight;
+  }
+  function moveTo(x, y, ms){
+    return new Promise(res => {
+      const x0 = +packet.getAttribute('cx'), y0 = +packet.getAttribute('cy');
+      if (REDUCED || !ms){ packet.setAttribute('cx', x); packet.setAttribute('cy', y); return res(); }
+      const t0 = performance.now();
+      (function f(t){
+        const p = Math.min(1, (t - t0) / ms), e = p < .5 ? 2*p*p : -1 + (4 - 2*p)*p;
+        packet.setAttribute('cx', x0 + (x - x0)*e); packet.setAttribute('cy', y0 + (y - y0)*e);
+        p < 1 ? requestAnimationFrame(f) : res();
+      })(t0);
+    });
+  }
+  function reset(){
+    svg.querySelectorAll('.station').forEach(s => s.classList.remove('active','pass','skip'));
+    svg.querySelectorAll('.edge').forEach(e => e.classList.remove('lit','blog','off'));
+    svg.querySelectorAll('.prow').forEach(r => r.classList.remove('hit','miss'));
+    packet.setAttribute('opacity','0'); packet.classList.remove('blog');
+    packet.setAttribute('cx', CENTER.browser[0]); packet.setAttribute('cy', CENTER.browser[1]);
+    tag.setAttribute('opacity','0');
+    ledger.innerHTML = '<div class="empty">The ledger fills as the dot moves. Each row is one hop and what the real code does there.</div>';
+    setBadge('dim','idle'); summary.textContent = 'Press Play to send the request.';
+    caption.textContent = CAPTION;
+  }
+  async function arrive(name, cls){
+    svg.querySelectorAll('.station.active').forEach(s => { s.classList.remove('active'); s.classList.add('pass'); });
+    const st = station(name); if (st) st.classList.add('active');
+    if (cls) packet.classList.add(cls);
+    await moveTo(CENTER[name][0], CENTER[name][1], 520);
+  }
+  function light(id, blog){ const e = edge(id); e.classList.add('lit'); if (blog) e.classList.add('blog'); }
+  const under = (path, base) => path === base || path.startsWith(base + '/');
+
+  function scenario(path){
+    const isBlog = under(path, '/blog'), isDocs = under(path, '/docs'), toBlog = isBlog || isDocs;
+    const missing = path === '/does-not-exist';
+    const zone = toBlog ? 'blog' : 'shell', status = missing ? 404 : 200;
+    const entry = isDocs ? '/docs, /docs/:path*' : '/blog, /blog/:path*';
+    const url = 'https://mfe-lite-shell.vercel.app' + path;
+    const steps = [];
+    steps.push(async () => {
+      packet.setAttribute('opacity','1');
+      station('browser').classList.add('active');
+      row('info','send', 'GET ' + url, 'The browser asks the shell’s domain for ' + path + '. Nothing in the URL says which project will answer.');
+    });
+    steps.push(async () => {
+      light('e-browser-domain'); await arrive('domain');
+      row('info','cloud', 'mfe-lite-shell.vercel.app', 'One domain. Visitors only ever talk to the shell project’s production domain; the blog project’s own domain is never used.');
+    });
+    steps.push(async () => {
+      light('e-domain-routing'); await arrive('routing');
+      row('info','info', 'Vercel routing (group mfe-lite)', 'Vercel compares the path with the routing table from microfrontends.json. This layer runs no application code: it only matches paths.');
+    });
+    steps.push(async () => {
+      await moveTo(CENTER.table[0], CENTER.table[1], 350);
+      if (toBlog){ hit('rq-table', isDocs ? 'docs' : 'blog'); row('blog','file', 'match: ' + entry + ' → mfe-lite-blog', path + ' is claimed by the blog, so Vercel sends the request straight to the blog project. The shell never sees it.'); }
+      else { hit('rq-table','else'); row('shell','server', 'no match → default app', 'No child claims ' + path + '. Unclaimed paths belong to the default app, mfe-lite-shell.'); }
+    });
+    if (toBlog){
+      edge('e-routing-shell').classList.add('off');
+      steps.push(async () => {
+        light('e-routing-blog', true); station('shell').classList.add('skip'); await arrive('blog','blog');
+        row('blog','file', 'apps/blog/proxy.ts · matcher /blog, /blog/:path*, /docs, /docs/:path*', 'The blog renders ' + path + '. Its proxy makes no routing decision; it only sets x-mfe-zone: blog on the response.');
+      });
+    } else {
+      edge('e-routing-blog').classList.add('off');
+      steps.push(async () => {
+        light('e-routing-shell'); station('blog').classList.add('skip'); await arrive('shell');
+        row('shell','server', 'apps/shell/proxy.ts · catch-all matcher', 'The matcher /((?!_next/|vc-ap-|favicon.ico|blog/|blog$|docs/|docs$).*) matches ' + path + '. The proxy makes no routing decision; it only sets x-mfe-zone: shell. ' + (missing ? 'The shell has no page for this path, so it renders its 404 page.' : 'The shell renders the page.'));
+      });
+    }
+    steps.push(async () => {
+      svg.querySelectorAll('.station.active').forEach(s => { s.classList.remove('active'); s.classList.add('pass'); });
+      tagText.textContent = status + ' · x-mfe-zone: ' + zone; tag.setAttribute('opacity','1');
+      row(missing ? 'warn' : 'ok', missing ? 'warn' : 'ok', status + ' · x-mfe-zone: ' + zone, toBlog
+        ? 'The HTML references /vc-ap-5d190e/_next/static/… : withMicrofrontends gives the child zone a hashed asset prefix so its files never collide with the shell’s. Those assets are served through the shell’s domain too.'
+        : 'The HTML references /_next/static/… with no prefix: the default app keeps the bare asset path.');
+      setBadge(zone, status + ' · x-mfe-zone: ' + zone);
+      summary.textContent = toBlog
+        ? 'Why blog: the routing table gives ' + entry + ' to the blog project, so Vercel routed the request there before any code ran.'
+        : 'Why shell: no entry claims ' + path + ', so Vercel sent it to the default app.' + (missing ? ' The shell has no such page and answers with its 404.' : '');
+      caption.textContent = 'Try it: curl -sI ' + url + ' | grep x-mfe-zone → x-mfe-zone: ' + zone;
+    });
+    return steps;
+  }
+
+  let steps = [], i = 0, busy = false, done = false;
+  function prepare(){ reset(); steps = scenario(pathSel.value); i = 0; done = false; }
+  async function runStep(){ if (busy || i >= steps.length) return; busy = true; await steps[i++](); busy = false; if (i >= steps.length) done = true; }
+  async function play(){
+    prepare();
+    btnPlay.disabled = true;
+    while (i < steps.length){ await runStep(); if (i < steps.length) await sleep(650); }
+    btnPlay.disabled = false;
+  }
+  btnPlay.addEventListener('click', play);
+  btnStep.addEventListener('click', async () => { if (busy) return; if (done || !steps.length) prepare(); await runStep(); });
+  btnReset.addEventListener('click', () => { steps = []; i = 0; done = false; reset(); });
+  pathSel.addEventListener('change', () => { steps = []; reset(); });
+  reset();
+})();
+</script>
+</body>
+</html>

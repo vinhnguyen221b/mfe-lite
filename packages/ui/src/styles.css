@@ -1,0 +1,20 @@
+:root { color-scheme: light dark; font-family: ui-sans-serif, system-ui, sans-serif; }
+body { margin: 0; line-height: 1.5; }
+main { max-width: 48rem; margin: 0 auto; padding: 2rem 1.5rem; }
+.header { display: flex; align-items: center; gap: 1.5rem; padding: 0.75rem 1.5rem; border-bottom: 1px solid #8884; }
+.brand { font-weight: 600; text-decoration: none; color: inherit; }
+.nav { display: flex; gap: 1rem; flex: 1; }
+.nav a { color: inherit; opacity: 0.75; text-decoration: none; }
+.nav a:hover { opacity: 1; }
+.badge { display: inline-flex; align-items: center; gap: 0.4rem; font: 0.75rem ui-monospace, monospace; border: 1px solid #8886; border-radius: 999px; padding: 0.15rem 0.6rem; }
+.dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #0d9488; }
+.badge[data-zone="blog"] .dot { background: #d97706; }
+.card { border: 1px solid #8884; border-radius: 0.5rem; padding: 1rem 1.25rem; margin: 1rem 0; }
+button { font: inherit; padding: 0.4rem 0.9rem; border-radius: 0.4rem; border: 1px solid #8886; cursor: pointer; }
+code { font-family: ui-monospace, monospace; font-size: 0.9em; }
+pre { overflow-x: auto; border: 1px solid #8884; border-radius: 0.5rem; padding: 0.75rem 1rem; font-size: 0.85rem; line-height: 1.5; }
+pre code { font-size: inherit; }
+.lead { font-size: 1.1rem; opacity: 0.8; }
+.doc-list { list-style: none; padding: 0; }
+.doc-list li { display: grid; gap: 0.15rem; padding: 0.6rem 0; border-top: 1px solid #8884; }
+.doc-list span { opacity: 0.75; font-size: 0.95rem; }

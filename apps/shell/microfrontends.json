@@ -1,0 +1,23 @@
+{
+  "$schema": "https://openapi.vercel.sh/microfrontends.json",
+  "applications": {
+    "mfe-lite-shell": {
+      "packageName": "@mfe-lite/shell",
+      "development": {
+        "fallback": "mfe-lite-shell.vercel.app",
+        "local": 3000
+      }
+    },
+    "mfe-lite-blog": {
+      "packageName": "@mfe-lite/blog",
+      "routing": [
+        { "group": "blog", "paths": ["/blog", "/blog/:path*"] },
+        { "group": "docs", "paths": ["/docs", "/docs/:path*"] }
+      ],
+      "development": { "local": 3001 }
+    }
+  },
+  "options": {
+    "localProxyPort": 3024
+  }
+}

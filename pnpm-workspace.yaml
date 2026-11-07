@@ -1,0 +1,18 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Supply chain: refuse packages published less than 3 days ago (minutes)
+minimumReleaseAge: 4320
+
+ignoredBuiltDependencies:
+  - sharp
+  - unrs-resolver
+
+# Trusted first-party packages that ship same-day patch releases
+minimumReleaseAgeExclude:
+  - next
+  - "@next/*"
+  - "@vercel/*"
+  - turbo
+  - "@turbo/*"
