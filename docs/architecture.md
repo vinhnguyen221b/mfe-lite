@@ -31,7 +31,7 @@ browser ──GET──▶ mfe-lite-shell.vercel.app ──▶ Vercel routing (g
 | Owns | `microfrontends.json`, its pages and a `proxy.ts` that only stamps the zone header | its pages and a `proxy.ts` that only stamps the zone header |
 | Vercel settings | Root Directory `apps/shell`, framework Next.js, Node 24 | Root Directory `apps/blog`, framework Next.js, Node 24 |
 | Build command (`vercel.json`) | `cd ../.. && pnpm turbo build --filter=@mfe-lite/shell` | `cd ../.. && pnpm turbo build --filter=@mfe-lite/blog` |
-| Git | this repo, production branch `main` | same repo, same branch; each project builds only its own app, and every push builds both |
+| Git | this repo, production branch `main` | same repo, same branch; each project builds only its own app and skips commits that do not affect it |
 | Local port | 3000 | 3001 |
 
 Group `mfe-lite` (`vercel microfrontends create-group --name mfe-lite --default-app mfe-lite-shell --project mfe-lite-shell

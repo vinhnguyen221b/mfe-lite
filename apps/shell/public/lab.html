@@ -310,7 +310,7 @@ svg text.halo{paint-order:stroke;stroke:var(--surface-2);stroke-width:4px;stroke
   </div>
 
   <div class="grid cols-3">
-    <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-git"/></svg></div><div><b>Independent deploys</b><span>Each app builds, deploys and rolls back as its own project; a failed blog build leaves the shell up. Every push still builds both.</span></div></div>
+    <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-git"/></svg></div><div><b>Independent deploys</b><span>Each app builds, deploys and rolls back as its own project; a failed blog build leaves the shell up. A blog-only change builds only the blog.</span></div></div>
     <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-globe"/></svg></div><div><b>One URL</b><span>Visitors, cookies and links all live on the shell's domain. The blog project's own domain is never used by visitors.</span></div></div>
     <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-route"/></svg></div><div><b>One routing file</b><span><code>microfrontends.json</code> lists the paths the blog owns; Vercel applies it before any app code runs. <a href="#request">Follow a request →</a></span></div></div>
   </div>
@@ -453,7 +453,7 @@ svg text.halo{paint-order:stroke;stroke:var(--surface-2);stroke-width:4px;stroke
         <dt><code>pnpm test</code></dt><dd>5 passed (routing contract, shell proxy matcher)</dd>
         <dt><code>pnpm typecheck</code></dt><dd>3 packages successful</dd>
         <dt><code>pnpm build</code></dt><dd>shell: <code>/</code>, Proxy · blog: <code>/</code>, <code>/blog</code>, <code>/blog/[slug]</code>, <code>/docs</code>, <code>/docs/[slug]</code> (four articles), Proxy</dd>
-        <dt>Builds</dt><dd>Git deploys of each project take about 20 s; every push to <code>main</code> builds both projects</dd>
+        <dt>Builds</dt><dd>Git deploys of each project take about 20 s; a change only under <code>apps/blog</code> builds only the blog, a change outside the apps builds both</dd>
       </dl>
     </div>
   </div>

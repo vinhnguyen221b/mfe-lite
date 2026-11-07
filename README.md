@@ -59,7 +59,7 @@ pnpm build
    vercel microfrontends create-group --name mfe-lite --default-app mfe-lite-shell \
      --project mfe-lite-shell --project mfe-lite-blog --project-default-route mfe-lite-blog=/docs --yes
    ```
-3. Connect both projects to the repo (`vercel git connect`, from the repo root and with `--cwd apps/blog`) and push to `main`. Each project builds only its own app (the `--filter` in its build command), but every push to `main` builds both projects; the group composes them on the shell's domain. Deployments built before the group existed must be redeployed once.
+3. Connect both projects to the repo (`vercel git connect`, from the repo root and with `--cwd apps/blog`) and push to `main`. Each project builds only its own app (the `--filter` in its build command) and skips commits that do not affect it: a change only under `apps/blog` builds the blog alone, while a change outside the apps, such as a doc at the repo root, builds both. The group composes them on the shell's domain. Deployments built before the group existed must be redeployed once.
    A CLI deploy must also run from the repo root (`vercel deploy --prod --project <name>`): from inside `apps/<app>` the upload lacks the monorepo root and fails with "Root Directory does not exist".
 
 ## The three checks
@@ -69,7 +69,7 @@ Against the shell's production domain (`$HOST=https://mfe-lite-shell.vercel.app`
 | Check | Command | Expect |
 |---|---|---|
 | One domain | `curl -sI $HOST/blog \| grep x-mfe-zone`, same for `/docs` | `blog` (shell `/` answers `shell`) |
-| Independent deployments | push a change under `apps/blog` only | both projects build (no Ignored Build Step is set); `/docs` changes, `/` does not; each project keeps its own deployment list and rollback |
+| Independent deployments | push a change under `apps/blog` only | only the blog builds; the shell's deployment is canceled as unaffected and `/` keeps serving its current deployment; each project keeps its own deployment list and rollback |
 | One routing file | `curl -sI $HOST/does-not-exist \| grep -E '^HTTP\|x-mfe-zone'` | `404`, `shell`: nobody claims the path, so the default app answers |
 
 Blog assets load under `/vc-ap-<hash>/_next/...`, the hashed prefix `withMicrofrontends` gives the child zone. Recorded outputs: [EVIDENCE.md](EVIDENCE.md).
@@ -79,7 +79,7 @@ Blog assets load under `/vc-ap-<hash>/_next/...`, the hashed prefix `withMicrofr
 - The shell's matcher must exclude `_next/`, `vc-ap-` and the child-owned `/blog` and `/docs` paths, or the shell shadows the child.
 - `withMicrofrontends` injects `MFE_CONFIG`, `NEXT_PUBLIC_MFE_CURRENT_APPLICATION` and the client's copy of the routing table at build time; the shared `Link` reads that copy to tell same-zone links from cross-zone ones.
 - Hobby: one microfrontends group per team, two projects per group.
-- Every push to `main` builds both projects, even a docs-only commit. To skip a project whose app did not change, set an Ignored Build Step (for example `npx turbo-ignore`); this demo does not.
+- Vercel skips a project that a commit does not affect (`enableAffectedProjectsDeployments`, on for both projects): a change only under `apps/blog` builds only the blog. A change outside the apps, even a doc at the repo root, builds both, and a commit with no file changes builds neither.
 
 ## Learn more
 

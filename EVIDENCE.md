@@ -192,3 +192,5 @@ repository for both.
   `enableAffectedProjectsDeployments: true`. `vercel redeploy <canceled-deployment-url>` built it.
 - A docs-only commit (`3e3da61`, only `EVIDENCE.md` changed) still built **both** projects, a Production and a Preview each,
   all READY. Files outside the apps count as affecting every project; only a commit with no file changes was skipped.
+- A commit that changed only `apps/blog` (`5fbb141`) built only the blog, a Production and a Preview; both shell deployments
+  were CANCELED as unaffected, and the shell kept serving its previous deployment.

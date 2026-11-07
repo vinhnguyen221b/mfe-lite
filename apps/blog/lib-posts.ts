@@ -133,7 +133,7 @@ export const DOCS: Doc[] = [
           "Hobby allows one microfrontends group per team, with two projects.",
           "`create-group` must list the default app among `--project` too.",
           "Deployments built before the group existed ignore `microfrontends.json`: redeploy both projects once after creating it.",
-          "Every push to `main` builds both projects, even a docs-only commit. An Ignored Build Step per app (for example `npx turbo-ignore`) would skip the unchanged one; this demo does not set one.",
+          "Vercel skips a project that a commit does not affect: a change only under `apps/blog` builds only the blog, while a change outside the apps (a doc at the repo root, for example) builds both.",
           "A failed blog build leaves the shell's current deployment up.",
         ],
       },
