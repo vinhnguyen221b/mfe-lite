@@ -178,3 +178,15 @@ On https://mfe-lite-shell.vercel.app, after commit `4461755` was pushed and both
 | 3 | `/docs`, `/docs/*` → `x-mfe-zone: blog` | pass |
 | 4 | an unclaimed path → the shell's 404 | pass |
 | 5 | child assets under `/vc-ap-<hash>/` | pass (`vc-ap-5d190e`) |
+
+## Repository recreated (2026-11-07)
+
+The Git history was squashed into one commit and the GitHub repository was recreated. Both Vercel projects were reconnected
+(`vercel git disconnect`, then `vercel git connect <repo-url>`, the blog with `--cwd apps/blog`); `link.repoId` points at the new
+repository for both.
+
+- The first push was **BLOCKED** on both projects: "Vercel couldn't find a Git account for the commit author". On Hobby, a Git
+  deployment is built only when the commit author's email belongs to the owner's Git account. A GitHub noreply address of the
+  owner passes.
+- An empty commit was **CANCELED** on both projects: "the commit didn't affect this project". Both projects have
+  `enableAffectedProjectsDeployments: true`. `vercel redeploy <canceled-deployment-url>` built it.
