@@ -75,6 +75,17 @@ Press Like in the blog's Reactions card on `/horizontal` and the ♥ count in th
 - **Across pages: saved, not shared.** A reload or a move between zones is a full page load and a new React tree. The provider saves the count in `localStorage` under `mfe-lite:likes` (both zones are on one origin) and loads it when it mounts; the browser's `storage` event updates other tabs.
 - **Tests.** `apps/shell/__tests__/likes.test.ts` renders a provider and a consumer. From the same copy of the module they connect; from two separate copies, which is what each zone bundles without `shared`, the consumer is disconnected.
 
+What is shared and what is only saved:
+
+| Where you look | How it gets the count |
+|---|---|
+| The same page, both apps (`/horizontal`) | **Shared**: one React context, through `shared`. It updates at once; nothing is stored or sent. |
+| Another page, either app | **Saved**: a new page builds a new provider, which loads the count this browser saved. |
+| Another tab | **Saved**: the browser's `storage` event tells the other tab to load the saved count again. |
+| Another browser or visitor | **Neither**: the demo has no server, so each browser has its own count. |
+
+**In production**, `localStorage` would not be the store. The count would live on a server, behind an API owned by the team that owns the feature (here the blog, for example an `/api/likes` route on a database such as Redis), and the other app would call that API through the shared domain, never the database. Each layout would render the count from the server, so the HTML shows the real number. The shared context would stay as it is: the in-page copy that updates at once when someone presses Like. Only where the provider loads and saves the count would change.
+
 Limits:
 
 - Sharing happens in the browser. The blog renders the remote's server HTML under its own layout; the shell's module takes over when the page loads. The server HTML shows 0 either way.

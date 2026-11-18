@@ -99,6 +99,11 @@ every page: LikesProvider ──save──▶ localStorage "mfe-lite:likes" ─�
 - **Failure.** With the blog stopped (checked locally), `/horizontal` still renders, the slots show their fallback, and the
   header and the shell's panel keep the saved count.
 - **Scope.** The count is per browser and per origin. A count shared by every visitor would need server-side storage.
+- **In production.** Two layers with two jobs. The source of truth is a server store behind an API owned by the feature's team
+  (here the blog: an `/api/likes` route on a database such as Redis); the shell calls that API through the shared domain, never
+  the database, and each layout renders the count from it. The shared context stays as the in-page copy that updates at once.
+  `localStorage` is only the demo's stand-in for the first layer; swapping it changes where `LikesProvider` loads and saves, not
+  how the two apps share the count on a page.
 
 ## The two projects
 

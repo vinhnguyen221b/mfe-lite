@@ -764,7 +764,7 @@ svg .badge-big{font-size:18px;font-weight:800}
   </figure>
   <div class="ss-note" id="ss-note"></div>
   <div class="grid cols-3">
-    <div class="card"><h3><svg class="ic"><use href="#i-globe"/></svg>One page at a time</h3><p class="muted">A context lives as long as the page. A reload or a move to the other app starts a new React tree, and that app's layout provider loads the count saved in this browser. A count shared by every visitor would need a server.</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-globe"/></svg>Shared on a page, saved between pages</h3><p class="muted">A context lives as long as the page. A reload or a move to the other app starts a new React tree, and that app's provider loads the count saved in this browser. In production it would load and save through a server API owned by the blog instead; the shared context stays the same.</p></div>
     <div class="card"><h3><svg class="ic"><use href="#i-server"/></svg>In the browser only</h3><p class="muted">Every provider renders 0 into the HTML and loads the saved count after hydration. The blog renders the card's HTML under its own layout; the shell's module takes over once the page runs.</p></div>
     <div class="card"><h3><svg class="ic"><use href="#i-link"/></svg>The module is an API</h3><p class="muted">The blog's button runs against the shell's build of <code>likes-context</code>. Change <code>count</code>, <code>like</code> and <code>owner</code> so both the old and the new side keep working.</p></div>
   </div>

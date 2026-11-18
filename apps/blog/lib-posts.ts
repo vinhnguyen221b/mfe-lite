@@ -205,6 +205,19 @@ export const DOCS: Doc[] = [
       {
         p: "Moving between a shell page and a blog page, or reloading, is a full page load: a new React tree and a new provider. The provider saves the count in `localStorage` under `mfe-lite:likes` and loads it when it mounts. Both zones are served from one origin, so they read the same key, and the browser's `storage` event updates other tabs.",
       },
+      { h: "What is shared, what is saved" },
+      {
+        list: [
+          "The same page, both apps (`/horizontal`): shared. One React context, through `shared`; it updates at once and nothing is stored or sent.",
+          "Another page, either app: saved. A new page builds a new provider, which loads the count this browser saved.",
+          "Another tab: saved. The browser's `storage` event tells the other tab to load the saved count again.",
+          "Another browser or visitor: neither. This demo has no server, so each browser keeps its own count.",
+        ],
+      },
+      { h: "In production" },
+      {
+        p: "`localStorage` is this demo's stand-in. A real app would keep the count on a server, behind an API owned by the team that owns the feature: here this blog, for example an `/api/likes` route on a database such as Redis. The shell would call that API through the shared domain, never the database, and each layout would render the count from it, so the HTML shows the real number. The shared context would not change: it stays the in-page copy that updates at once when someone presses Like. Only where the provider loads and saves the count would change.",
+      },
       { h: "Limits" },
       {
         list: [
