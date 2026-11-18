@@ -16,3 +16,8 @@ minimumReleaseAgeExclude:
   - "@vercel/*"
   - turbo
   - "@turbo/*"
+
+# Security: @vercel/microfrontends 2.4.2 pulls follow-redirects 1.16.1 through http-proxy
+# (GHSA-mrwp-f3q8-3g9p, fixed in 1.16.2). Remove once it ships a patched version itself.
+overrides:
+  follow-redirects: 1.16.2

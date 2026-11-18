@@ -296,3 +296,14 @@ blog chunks under /vc-ap-5d190e/ → 200 application/javascript
 ```
 
 In a browser, two clicks on Like showed `Like · 2`, with no console errors.
+
+## follow-redirects override (2026-11-18)
+
+`@vercel/microfrontends` 2.4.2 pulls `follow-redirects` 1.16.1 through `http-proxy` 1.18.1, used by the local microfrontends
+proxy (GHSA-mrwp-f3q8-3g9p, high, fixed in 1.16.2). `pnpm-workspace.yaml` now overrides it to 1.16.2.
+
+```
+$ pnpm why follow-redirects -r → follow-redirects@1.16.2 ← http-proxy@1.18.1 ← @vercel/microfrontends@2.4.2
+$ pnpm audit --prod             → one advisory left: picomatch <=4.0.7 (GHSA-fc5q-39xc-vjpf), no patched version yet
+$ pnpm test / typecheck / build → 5 passed / 3 packages successful / both apps built
+```
