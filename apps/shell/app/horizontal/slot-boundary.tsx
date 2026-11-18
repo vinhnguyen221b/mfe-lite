@@ -12,7 +12,7 @@ export class SlotBoundary extends Component<{ label: string; children: ReactNode
   render() {
     if (this.state.failed) {
       return (
-        <div className="card" data-slot-failed={this.props.label}>
+        <div className="slot-note" data-slot-failed={this.props.label}>
           {this.props.label} is unavailable right now. The rest of this page is unaffected.
         </div>
       );

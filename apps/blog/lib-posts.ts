@@ -157,7 +157,7 @@ export const DOCS: Doc[] = [
         ],
       },
       {
-        p: "Each card prints the blog's build commit and the page text prints the shell's, so a blog-only deployment is visible on the page: the cards change, the shell's commit does not.",
+        p: "Each card says `served by: blog`, inside a dashed frame that the shell draws. After a blog-only deployment the cards change on the next request, while the shell's deployment is canceled as unaffected.",
       },
     ],
     seeAlso: [

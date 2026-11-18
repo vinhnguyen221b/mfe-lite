@@ -2,18 +2,17 @@ import { ExposeRemoteComponent } from "remote-components/remote/nextjs/app";
 import { ZoneBadge } from "@mfe-lite/ui";
 import { Reactions } from "./reactions";
 
-const BUILD = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local";
-
 // A remote Client Component: its JavaScript is built by the blog zone and hydrates inside a shell page.
 export default function ReactionsRemote() {
   return (
     <ExposeRemoteComponent>
-      <section className="card" data-remote="reactions">
-        <h2>Reactions</h2>
+      <section className="remote" data-remote="reactions">
+        <div className="remote-head">
+          <h2>Reactions</h2>
+          <ZoneBadge zone="blog" />
+        </div>
+        <p className="muted small">This button is built and deployed by the blog project.</p>
         <Reactions />
-        <p>
-          <ZoneBadge zone="blog" /> <code>build {BUILD}</code>
-        </p>
       </section>
     </ExposeRemoteComponent>
   );

@@ -18,13 +18,17 @@ export default async function Post({ params }: PageProps<"/blog/[slug]">) {
   const post = POSTS.find((p) => p.slug === slug);
   if (!post) notFound();
   return (
-    <article>
-      <p>
-        <Link href="/blog">← All posts</Link>
-      </p>
+    <article className="prose">
+      <Link href="/blog" className="back">
+        ← All posts
+      </Link>
+      <span className="eyebrow">Blog zone</span>
       <h1>{post.title}</h1>
-      <p>{post.body}</p>
-      <Reactions />
+      <p className="lead">{post.body}</p>
+      <div className="reactions-bar">
+        <Reactions />
+        <span className="muted small">Your Like also counts in the ♥ badge, on every page of both zones.</span>
+      </div>
     </article>
   );
 }

@@ -7,18 +7,26 @@ export const metadata = { title: "Blog" };
 export default function Blog() {
   return (
     <>
-      <h1>Blog</h1>
-      <p>
-        These posts are served by the <strong>blog</strong> project, the same project that serves{" "}
-        <Link href="/docs">/docs</Link>.
-      </p>
-      <ul>
+      <header className="page-head">
+        <span className="eyebrow">Vertical split · blog zone</span>
+        <h1>Blog</h1>
+        <p className="lead">
+          These posts are served by the <strong>blog</strong> project, the same project that serves{" "}
+          <Link href="/docs">/docs</Link>.
+        </p>
+      </header>
+      <div className="grid grid-2">
         {POSTS.map((p) => (
-          <li key={p.slug}>
-            <Link href={`/blog/${p.slug}`}>{p.title}</Link>
-          </li>
+          <Link key={p.slug} href={`/blog/${p.slug}`} className="card link-card">
+            <span className="tag">
+              <code>/blog/{p.slug}</code>
+            </span>
+            <h2>{p.title}</h2>
+            <p>{p.body}</p>
+            <span className="go">Read →</span>
+          </Link>
         ))}
-      </ul>
+      </div>
     </>
   );
 }

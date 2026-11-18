@@ -7,38 +7,52 @@ export const metadata = { title: "Docs" };
 export default function Docs() {
   return (
     <>
-      <h1>Docs</h1>
-      <p>
-        MFE Lite shows four things and nothing else. The first three split the site by path (vertical); the fourth puts
-        both apps on one page (horizontal):
-      </p>
-      <ol>
-        <li>
-          <strong>One domain</strong> in front of two independently deployed Next.js apps.
+      <header className="page-head">
+        <span className="eyebrow">Vertical split · blog zone</span>
+        <h1>Docs</h1>
+        <p className="lead">
+          MFE Lite shows four things and nothing else. The first three split the site by path (vertical); the fourth puts
+          both apps on one page (horizontal).
+        </p>
+      </header>
+      <ol className="spec grid grid-2">
+        <li className="card">
+          <strong>One domain</strong>
+          <span>In front of two independently deployed Next.js apps.</span>
         </li>
-        <li>
-          <strong>Independent deployments:</strong> each app has its own builds, deployments and rollbacks; a failed blog
-          build leaves the shell up.
+        <li className="card">
+          <strong>Independent deployments</strong>
+          <span>
+            Each app has its own builds, deployments and rollbacks; a failed blog build leaves the shell up.
+          </span>
         </li>
-        <li>
-          <strong>One routing file:</strong> <code>microfrontends.json</code> in the shell lists the paths the blog owns
-          (<code>/blog</code>, <code>/docs</code>, <code>/components</code>); the shell answers everything else.
+        <li className="card">
+          <strong>One routing file</strong>
+          <span>
+            <code>microfrontends.json</code> in the shell lists the paths the blog owns (<code>/blog</code>,{" "}
+            <code>/docs</code>, <code>/components</code>); the shell answers everything else.
+          </span>
         </li>
-        <li>
-          <strong>One page, two deployments:</strong> the shell&apos;s <a href="/horizontal">/horizontal</a> page embeds
-          two components that this blog project builds and deploys. A Like pressed in one of them also updates the ♥
-          count in the shell&apos;s header.
+        <li className="card">
+          <strong>One page, two deployments</strong>
+          <span>
+            The shell&apos;s <a href="/horizontal">/horizontal</a> page embeds two components that this blog project
+            builds and deploys. A Like pressed in one of them also updates the ♥ count in the shell&apos;s header.
+          </span>
         </li>
       </ol>
-      <ul className="doc-list">
+      <h2 className="section-title">Articles</h2>
+      <ul className="index">
         {DOCS.map((d) => (
           <li key={d.slug}>
-            <Link href={`/docs/${d.slug}`}>{d.title}</Link>
-            <span>{d.summary}</span>
+            <Link href={`/docs/${d.slug}`}>
+              <strong>{d.title}</strong>
+              <span>{d.summary}</span>
+            </Link>
           </li>
         ))}
       </ul>
-      <p className="card">
+      <p className="card muted small">
         This page is served by the <strong>blog</strong> project: Vercel sends <code>/docs</code> here directly, so the
         shell&apos;s proxy never runs for it. Diagrams and step-by-step request traces are in the{" "}
         <a href="/lab.html">interactive lab</a>.

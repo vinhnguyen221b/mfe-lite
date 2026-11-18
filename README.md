@@ -46,7 +46,7 @@ flowchart LR
 - The blog exposes two pages under `/components/*`, a path group it owns in `microfrontends.json`: `latest-posts` (a Server Component, no client JavaScript) and `reactions` (a Client Component with a Like button). Each is wrapped in `ExposeRemoteComponent` from [`remote-components`](https://www.npmjs.com/package/remote-components) (0.4.16, pinned).
 - The shell's `/horizontal` page renders its own text and two `ConsumeRemoteComponent` slots. On the server, a relative `src` resolves against `https://$VERCEL_PROJECT_PRODUCTION_URL` in production, so the fetch goes through the same routing and reaches the blog. The page arrives with both components already in the HTML; the Like button then hydrates with JavaScript loaded from the blog's `/vc-ap-<hash>/` prefix.
 - The page is rendered per request (`dynamic = "force-dynamic"`), so a blog deployment shows up on the next page load. Each slot sits in an error boundary and `Suspense`: if the blog is down, the page still answers 200 and the slot shows a fallback.
-- Each card prints `served by: blog` and the blog's build commit; the page text prints the shell's. After a blog-only commit, the shell's deployment is canceled as unaffected and the cards show the new blog commit while the shell's stays the same (see [EVIDENCE.md](EVIDENCE.md)).
+- Each card says `served by: blog`, inside a dashed frame that the shell draws. After a blog-only commit, the shell's deployment is canceled as unaffected and the next request to `/horizontal` shows the changed cards without a shell build (see [EVIDENCE.md](EVIDENCE.md)).
 
 What it costs, measured on production:
 
@@ -125,7 +125,7 @@ Against the shell's production domain (`$HOST=https://mfe-lite-shell.vercel.app`
 | One domain | `curl -sI $HOST/blog \| grep x-mfe-zone`, same for `/docs` | `blog` (shell `/` answers `shell`) |
 | Independent deployments | push a change under `apps/blog` only | only the blog builds; the shell's deployment is canceled as unaffected and `/` keeps serving its current deployment; each project keeps its own deployment list and rollback |
 | One routing file | `curl -sI $HOST/does-not-exist \| grep -E '^HTTP\|x-mfe-zone'` | `404`, `shell`: nobody claims the path, so the default app answers |
-| One page, two deployments | `curl -s $HOST/horizontal \| grep -o 'data-remote="[a-z-]*"'`, then push a change under `apps/blog/app/components` only | both remotes in the HTML; after the blog-only deploy the cards show the new blog commit, the page text keeps the shell's |
+| One page, two deployments | `curl -s $HOST/horizontal \| grep -o 'data-remote="[a-z-]*"'`, then push a change under `apps/blog/app/components` only | both remotes in the HTML; after the blog-only deploy the cards show the change while the shell's deployment is Canceled |
 
 Blog assets load under `/vc-ap-<hash>/_next/...`, the hashed prefix `withMicrofrontends` gives the child zone. Shared state is checked in a browser: press Like on `/horizontal` and the header's ♥ count follows; reload, open `/blog/hello-world`, then go back Home, and the count stays. Recorded outputs: [EVIDENCE.md](EVIDENCE.md).
 
@@ -138,7 +138,6 @@ Blog assets load under `/vc-ap-<hash>/_next/...`, the hashed prefix `withMicrofr
 - A shared workspace package is bundled once per zone, embedded components included. State that both apps must see goes through the browser (here a `localStorage` key and a `window` event), not through a module variable or a React context.
 - Hobby: one microfrontends group per team, two projects per group. The embedded components come from the blog, not a third project.
 - Vercel skips a project that a commit does not affect (`enableAffectedProjectsDeployments`, on for both projects): a change only under `apps/blog` builds only the blog. A change outside the apps, even a doc at the repo root, builds both, and a commit with no file changes builds neither.
-- Turborepo's remote cache can replay an app's previous build when its inputs did not change, and `VERCEL_GIT_COMMIT_SHA` is not part of the cache key here. So the build commit printed on a static page (the blog's cards) is the last commit that changed that app; the shell's `/horizontal`, rendered per request, prints the deployed commit.
 
 ## Learn more
 

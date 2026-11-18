@@ -74,7 +74,7 @@ blog's Like button ──addLike()──▶ localStorage "mfe-lite:likes" ──
 | Piece | Where | What it does |
 |---|---|---|
 | `packages/ui/src/likes/store.ts` | both zones, one copy each | `readLikes`, `addLike`, `subscribeLikes`: the browser contract, no React |
-| `packages/ui/src/likes/client.tsx` | both zones, one copy each | `useLikes()` (`useSyncExternalStore`, 0 on the server) and the header's `LikesBadge` |
+| `packages/ui/src/likes/client.tsx` | both zones, one copy each | `useLikes()` (`useSyncExternalStore`, 0 on the server), the header's `LikesBadge` and the large `LikesMeter` that `/horizontal` shows next to the Like button |
 | `packages/ui/src/header.tsx` | both zones | Renders `LikesBadge` next to the zone badge |
 | `apps/blog/app/components/reactions/reactions.tsx` | blog | The Like button: `addLike()` on click, `useLikes()` for its label; also used on each blog post |
 | `apps/shell/__tests__/likes.test.ts` | shell | Loads two copies of the module, as the two zones do, and checks they agree |
@@ -112,10 +112,6 @@ Group `mfe-lite` (`vercel microfrontends create-group --name mfe-lite --default-
 client-side navigation, into the other zone it becomes a full navigation. `withMicrofrontends` gives each app a copy of the routing
 table at build time (`NEXT_PUBLIC_MFE_CLIENT_CONFIG`), so `Link` knows which zone a path belongs to without a request. Links inside
 an embedded component are plain `<a>` tags: the component cannot know which zone its host page belongs to.
-
-Turborepo's remote cache replays an app's previous build when its inputs did not change, and `VERCEL_GIT_COMMIT_SHA` is not part of
-the cache key. The build commit printed on a static page is therefore the last commit that changed that app, not always the
-deployed one; the shell's per-request `/horizontal` prints the deployed commit.
 
 ## The shell's proxy matcher
 

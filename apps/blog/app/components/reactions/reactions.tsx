@@ -7,8 +7,11 @@ import { addLike, useLikes } from "@mfe-lite/ui/likes";
 export function Reactions() {
   const likes = useLikes();
   return (
-    <button type="button" data-testid="reactions" onClick={() => addLike()}>
-      Like · {likes}
+    <button type="button" className="like" data-testid="reactions" onClick={() => addLike()}>
+      <span aria-hidden="true">♥</span> Like
+      <span className="like-count" aria-label={`${likes} so far`}>
+        {likes}
+      </span>
     </button>
   );
 }

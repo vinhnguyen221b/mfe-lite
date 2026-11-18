@@ -54,15 +54,18 @@ export default async function Doc({ params }: PageProps<"/docs/[slug]">) {
   const doc = DOCS[index];
   const next = DOCS[index + 1];
   return (
-    <article>
-      <p>
-        <Link href="/docs">← All docs</Link>
-      </p>
+    <article className="prose">
+      <Link href="/docs" className="back">
+        ← All docs
+      </Link>
+      <span className="eyebrow">
+        Docs · {String(index + 1).padStart(2, "0")} of {String(DOCS.length).padStart(2, "0")}
+      </span>
       <h1>{doc.title}</h1>
       <p className="lead">{doc.summary}</p>
       {doc.blocks.map(render)}
       {doc.seeAlso && (
-        <p>
+        <p className="muted">
           See also:{" "}
           {doc.seeAlso.map((l, i) => (
             <Fragment key={l.href}>
@@ -73,9 +76,11 @@ export default async function Doc({ params }: PageProps<"/docs/[slug]">) {
         </p>
       )}
       {next && (
-        <p className="card">
-          Next: <Link href={`/docs/${next.slug}`}>{next.title}</Link>
-        </p>
+        <Link href={`/docs/${next.slug}`} className="card link-card" style={{ marginTop: "2rem" }}>
+          <span className="tag">Next</span>
+          <h3>{next.title}</h3>
+          <p>{next.summary}</p>
+        </Link>
       )}
     </article>
   );
