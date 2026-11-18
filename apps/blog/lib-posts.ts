@@ -168,54 +168,52 @@ export const DOCS: Doc[] = [
   {
     slug: "shared-state",
     title: "Sharing state between zones",
-    summary: "How a Like in a blog component updates a count in the shell's header, with no code shared at runtime.",
+    summary: "How a Like in a blog component writes into a React context that the shell owns, and how the count survives page loads.",
     blocks: [
       {
-        p: "Press Like in the blog's card on `/horizontal` and the ♥ count in the header follows. The header there is rendered by the shell; the button is built by this blog project. The count is the same on blog pages like this one, after a reload and in other tabs.",
+        p: "Press Like in the blog's card on `/horizontal` and the ♥ count in the header and the shell's panel follow. The header and the panel are rendered by the shell; the button is built by this blog project. All three read one React context, held by the shell.",
       },
-      { h: "Why not a shared store" },
+      { h: "One module, shared" },
       {
         list: [
-          "`remote-components` shares only `react`, `react-dom` and `next/*` between the shell and an embedded component. Everything else, `@mfe-lite/ui` included, is bundled once per zone.",
-          "So a module variable or a React context in a shared package would exist twice, even on `/horizontal`, where both apps run in one React tree.",
-          "Between whole pages there is nothing to share at all: moving from a shell page to a blog page is a full page load.",
+          "By default `remote-components` shares only `react`, `react-dom` and `next/*` between the shell and an embedded component. Everything else is bundled once per zone, so the blog would bring its own copy of a context and find no provider for it.",
+          "Both apps therefore list one more module as shared. On `/horizontal`, the blog's import of it is the shell's live copy, so the blog's button finds the shell's provider.",
+          "Each zone's root layout renders a `LikesProvider`. On a blog page like this one, the button uses the blog's own provider.",
         ],
-      },
-      { h: "A browser contract" },
-      {
-        p: "Both zones are served from one origin, so they see the same browser storage. `@mfe-lite/ui/likes` agrees on three things:",
       },
       {
         code: [
-          'localStorage  "mfe-lite:likes"   // the count; survives reloads and zone changes',
-          'window event  "mfe-lite:likes"   // fired after each change; updates the current page',
-          'window event  "storage"          // fired by the browser; updates other tabs',
+          "// apps/shell/next.config.ts and apps/blog/next.config.ts",
+          "export default withRemoteComponentsConfig(withMicrofrontends(nextConfig), {",
+          '  shared: ["@mfe-lite/ui/likes-context"],',
+          "});",
         ].join("\n"),
       },
       {
         code: [
           "// apps/blog/app/components/reactions/reactions.tsx",
-          'import { addLike, useLikes } from "@mfe-lite/ui/likes";',
+          'import { useLikesStore } from "@mfe-lite/ui/likes-context";',
           "",
-          "const likes = useLikes();   // 0 on the server, then the browser's value",
-          "<button onClick={() => addLike()}>Like · {likes}</button>",
+          "const { count, like, owner } = useLikesStore();   // owner: \"shell\" on /horizontal, \"blog\" here",
+          "<button data-store={owner} onClick={() => like?.()}>Like · {count}</button>",
         ].join("\n"),
       },
       {
-        p: "`useLikes()` is `useSyncExternalStore` over that contract. Each zone runs its own copy of this code, and the copies agree because they read and write the same key and listen for the same events. `apps/shell/__tests__/likes.test.ts` loads two copies and checks exactly that.",
+        p: "`apps/shell/__tests__/likes.test.ts` renders a provider and a consumer: from the same copy of the module they connect, from two separate copies (each zone bundling its own) the consumer gets `like: null`.",
+      },
+      { h: "Between pages" },
+      {
+        p: "Moving between a shell page and a blog page, or reloading, is a full page load: a new React tree and a new provider. The provider saves the count in `localStorage` under `mfe-lite:likes` and loads it when it mounts. Both zones are served from one origin, so they read the same key, and the browser's `storage` event updates other tabs.",
       },
       { h: "Limits" },
       {
         list: [
+          "Sharing happens in the browser. This blog renders the component's server HTML under its own layout; the shell's module takes over when the page loads.",
+          "The shared module is an API between two deployments: this button runs against the shell's build of it. Change `count`, `like` and `owner` so both the old and the new side keep working.",
           "The count is per browser and per origin: the blog project's own domain keeps its own count. A count shared by every visitor would need server-side storage.",
-          "The key, the event names and the value format are an API between two apps. Change them like an API, with both sides deployed.",
-          "If the blog is down, the shell's header still shows the stored count; only the button is missing.",
+          "If the blog is down, `/horizontal` shows a fallback in place of the button, and the shell's header and panel keep the saved count.",
         ],
       },
-    ],
-    seeAlso: [
-      { href: "/horizontal", label: "Try it on /horizontal" },
-      { href: "/lab.html#horizontal", label: "Lab: the horizontal page" },
     ],
   },
   {

@@ -9,7 +9,7 @@ It shows the four things that matter and nothing else. The first three are the *
 1. **One domain** in front of two independently built Next.js apps.
 2. **Independent deployments**: each app is its own Vercel project with its own builds, deployments and rollbacks; a failed blog build leaves the shell up.
 3. **One routing file**: `microfrontends.json` in the shell lists the paths the blog owns; Vercel applies it before any app code runs.
-4. **One page, two deployments**: the shell's `/horizontal` page embeds two components that the blog project builds and deploys. A blog-only deployment changes them without a shell build. A Like pressed in the blog's component also updates a count in the shell's header ([shared state](#shared-state-between-zones)).
+4. **One page, two deployments**: the shell's `/horizontal` page embeds two components that the blog project builds and deploys. A blog-only deployment changes them without a shell build. A Like pressed in the blog's component writes into a React context that the shell owns ([shared state](#shared-state-between-zones)).
 
 | App | Package | Role | Paths | Vercel project |
 |---|---|---|---|---|
@@ -59,24 +59,27 @@ What it costs, measured on production:
 
 ```mermaid
 flowchart LR
-  LIKE["Like button<br/>(blog's code)"] -->|"addLike()"| LS[("localStorage<br/>mfe-lite:likes")]
-  LIKE -->|"window event mfe-lite:likes"| HDR["♥ badge in the header<br/>(shell's code)"]
-  LS -->|"read on load"| HDR
-  LS -->|"storage event"| TAB[other tabs]
+  subgraph page["/horizontal: one React tree"]
+    LIKE["Like button<br/>(blog's code)"] -->|"like()"| PROV["LikesProvider<br/>(shell's layout)"]
+    PROV --> HDR["♥ badge in the header"]
+    PROV --> PANEL["shell panel"]
+  end
+  PROV -->|"save"| LS[("localStorage<br/>mfe-lite:likes")]
+  LS -->|"load"| NEXT["next page's LikesProvider<br/>(shell or blog)"]
 ```
 
-Press Like in the blog's Reactions card on `/horizontal` and the ♥ count in the shell's header follows at once. The count is the same on blog pages, after a reload and in other tabs.
+Press Like in the blog's Reactions card on `/horizontal` and the ♥ count in the shell's header and the shell's panel follow at once. All three read one React context, held by the shell.
 
-- **Why not a shared store or React context.** `remote-components` shares only `react`, `react-dom` and `next/*` between the host and a remote. Each zone bundles its own copy of `@mfe-lite/ui`, so a module variable or a context provider there would exist twice. On the vertical pages there is no shared JavaScript at all: moving between zones is a full page load.
-- **The contract instead.** `@mfe-lite/ui/likes` keeps the count in `localStorage` under `mfe-lite:likes`, fires a `mfe-lite:likes` event on `window` after each change, and listens to the browser's `storage` event for other tabs. `useLikes()` reads it with `useSyncExternalStore`: 0 on the server, the browser's value once hydrated. Both zones are served from one origin, so they see the same storage.
-- **Where it is used.** The ♥ badge in both zones' header, the blog's Reactions card, and a Like button on each blog post.
-- **Tests.** `apps/shell/__tests__/likes.test.ts` loads two separate copies of the module, as the two zones do, and checks that they see the same count.
+- **One module, shared.** Both `next.config.ts` files pass `shared: ["@mfe-lite/ui/likes-context"]` to `withRemoteComponentsConfig`. By default `remote-components` shares only `react`, `react-dom` and `next/*`; with this entry the blog's remote lists `packages/ui/src/likes/context.tsx` as a required singleton, and in the browser its import of that module is the shell's live copy. The blog's button finds the shell's `LikesProvider` and calls its `like()`.
+- **Each zone has a provider.** Both root layouts render `<LikesProvider owner="…">` around the header and the page. On blog pages the button uses the blog's own provider. The button's `data-store` attribute names the zone whose provider it reached.
+- **Across pages: saved, not shared.** A reload or a move between zones is a full page load and a new React tree. The provider saves the count in `localStorage` under `mfe-lite:likes` (both zones are on one origin) and loads it when it mounts; the browser's `storage` event updates other tabs.
+- **Tests.** `apps/shell/__tests__/likes.test.ts` renders a provider and a consumer. From the same copy of the module they connect; from two separate copies, which is what each zone bundles without `shared`, the consumer is disconnected.
 
 Limits:
 
+- Sharing happens in the browser. The blog renders the remote's server HTML under its own layout; the shell's module takes over when the page loads. The server HTML shows 0 either way.
+- The shared module is an API between two deployments: the blog's button runs against the shell's build of `likes-context`. Change its shape (`count`, `like`, `owner`) so that both the old and the new side still work.
 - The count is per browser and per origin: the blog project's own domain, `mfe-lite-blog.vercel.app`, keeps its own. A count shared by every visitor would need server-side storage.
-- The key, the event name and the value format are an API between the two apps: change them like one, with both sides deployed.
-- The library's `shared` option can make a remote use the host's copy of a package (its docs mention context providers). Not tried here: it would only help on `/horizontal`, and the blog's component would then run against the shell's build of that package.
 
 ## Local workflow
 
@@ -127,15 +130,15 @@ Against the shell's production domain (`$HOST=https://mfe-lite-shell.vercel.app`
 | One routing file | `curl -sI $HOST/does-not-exist \| grep -E '^HTTP\|x-mfe-zone'` | `404`, `shell`: nobody claims the path, so the default app answers |
 | One page, two deployments | `curl -s $HOST/horizontal \| grep -o 'data-remote="[a-z-]*"'`, then push a change under `apps/blog/app/components` only | both remotes in the HTML; after the blog-only deploy the cards show the change while the shell's deployment is Canceled |
 
-Blog assets load under `/vc-ap-<hash>/_next/...`, the hashed prefix `withMicrofrontends` gives the child zone. Shared state is checked in a browser: press Like on `/horizontal` and the header's ♥ count follows; reload, open `/blog/hello-world`, then go back Home, and the count stays. Recorded outputs: [EVIDENCE.md](EVIDENCE.md).
+Blog assets load under `/vc-ap-<hash>/_next/...`, the hashed prefix `withMicrofrontends` gives the child zone. Shared state is checked in a browser: press Like on `/horizontal` and the header's ♥ count and the shell's panel follow, with the button's `data-store` set to `shell`; reload, open `/blog/hello-world`, then go back Home, and the count stays. Recorded outputs: [EVIDENCE.md](EVIDENCE.md).
 
 ## Gotchas this demo encodes
 
 - The shell's matcher must exclude `_next/`, `vc-ap-` and the child-owned `/blog`, `/docs` and `/components` paths, or the shell shadows the child.
 - `withMicrofrontends` injects `MFE_CONFIG`, `NEXT_PUBLIC_MFE_CURRENT_APPLICATION` and the client's copy of the routing table at build time; the shared `Link` reads that copy to tell same-zone links from cross-zone ones.
-- Both `next.config.ts` files wrap the config as `withRemoteComponentsConfig(withMicrofrontends(config))`.
+- Both `next.config.ts` files wrap the config as `withRemoteComponentsConfig(withMicrofrontends(config), { shared })`, with the same `shared` list on both sides.
 - A link inside an embedded component is a plain `<a>`: the component does not know which zone the host page belongs to.
-- A shared workspace package is bundled once per zone, embedded components included. State that both apps must see goes through the browser (here a `localStorage` key and a `window` event), not through a module variable or a React context.
+- A shared workspace package is bundled once per zone, embedded components included, unless both apps list it in `withRemoteComponentsConfig({ shared })`. Only `@mfe-lite/ui/likes-context` is listed here, so on `/horizontal` the blog's button and the shell use one React context. Across full page loads nothing is shared at runtime: the count is saved in `localStorage`.
 - Hobby: one microfrontends group per team, two projects per group. The embedded components come from the blog, not a third project.
 - Vercel skips a project that a commit does not affect (`enableAffectedProjectsDeployments`, on for both projects): a change only under `apps/blog` builds only the blog. A change outside the apps, even a doc at the repo root, builds both, and a commit with no file changes builds neither.
 
