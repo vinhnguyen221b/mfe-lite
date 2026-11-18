@@ -7,6 +7,7 @@ const NAV = [
   { href: "/", label: "Home" },
   { href: "/blog", label: "Blog" },
   { href: "/docs", label: "Docs" },
+  { href: "/horizontal", label: "Horizontal" },
 ];
 
 export function Header({ zone }: { zone: Zone }) {

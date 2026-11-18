@@ -12,7 +12,8 @@
       "packageName": "@mfe-lite/blog",
       "routing": [
         { "group": "blog", "paths": ["/blog", "/blog/:path*"] },
-        { "group": "docs", "paths": ["/docs", "/docs/:path*"] }
+        { "group": "docs", "paths": ["/docs", "/docs/:path*"] },
+        { "group": "components", "paths": ["/components", "/components/:path*"] }
       ],
       "development": { "local": 3001 }
     }

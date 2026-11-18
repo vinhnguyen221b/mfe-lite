@@ -13,7 +13,8 @@
     "@vercel/microfrontends": "2.4.2",
     "next": "16.4.3",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "remote-components": "0.4.16"
   },
   "devDependencies": {
     "@types/node": "^24",

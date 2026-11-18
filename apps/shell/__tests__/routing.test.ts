@@ -6,8 +6,15 @@ import { config as proxyConfig } from "../proxy";
 
 const CONFIG = "./microfrontends.json";
 
-const SHELL_PATHS = ["/", "/does-not-exist", "/lab.html"];
-const BLOG_PATHS = ["/blog", "/blog/hello-world", "/docs", "/docs/getting-started"];
+const SHELL_PATHS = ["/", "/does-not-exist", "/lab.html", "/horizontal"];
+const BLOG_PATHS = [
+  "/blog",
+  "/blog/hello-world",
+  "/docs",
+  "/docs/getting-started",
+  "/components/latest-posts",
+  "/components/reactions",
+];
 
 describe("routing contract", () => {
   it("routes every path to the expected app", () => {
@@ -16,7 +23,7 @@ describe("routing contract", () => {
     ).not.toThrow();
   });
 
-  it("never lets /blog or /docs fall through to the shell", () => {
+  it("never lets a blog zone path fall through to the shell", () => {
     for (const path of BLOG_PATHS) {
       expect(() => validateRouting(CONFIG, { "mfe-lite-shell": [path] })).toThrow();
     }
@@ -39,5 +46,6 @@ describe("shell proxy matcher", () => {
   it("does not skip shell paths that only start like a blog path", () => {
     expect(matches("/blogroll")).toBe(true);
     expect(matches("/docsify")).toBe(true);
+    expect(matches("/componentry")).toBe(true);
   });
 });

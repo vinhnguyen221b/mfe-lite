@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withMicrofrontends } from "@vercel/microfrontends/next/config";
+import { withRemoteComponentsConfig } from "remote-components/config/nextjs";
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@mfe-lite/ui"],
@@ -8,4 +9,5 @@ const nextConfig: NextConfig = {
 // withMicrofrontends reads microfrontends.json, injects MFE_CONFIG and
 // NEXT_PUBLIC_MFE_CURRENT_APPLICATION at build time, and gives this app a hashed
 // asset prefix (vc-ap-<hash>) so its /_next assets never collide with the blog zone's.
-export default withMicrofrontends(nextConfig);
+// withRemoteComponentsConfig lets /horizontal embed components rendered by the blog zone.
+export default withRemoteComponentsConfig(withMicrofrontends(nextConfig));
