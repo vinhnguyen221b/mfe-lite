@@ -376,3 +376,49 @@ https://mfe-lite-shell.vercel.app:
 
 In a browser on `/horizontal`, two clicks on the blog's Like took the header pill, the shell panel and the button from 6 to 8;
 `/blog/hello-world` then showed 8 with "Blog" marked as the current page. No console errors.
+
+## Shared React context on /horizontal (2026-11-18)
+
+This replaces the mechanism in "Shared likes across zones" above. The count now lives in a `LikesProvider` (React state)
+that each zone renders in its root layout. Both apps pass `shared: ["@mfe-lite/ui/likes-context"]` to
+`withRemoteComponentsConfig`, so the blog's remote manifest lists `packages/ui/src/likes/context.tsx` as a required
+singleton and, on `/horizontal`, the blog's Like button imports the shell's live copy of that module. It finds the shell's
+provider: the button, the shell panel and the header read one context. `localStorage` (`mfe-lite:likes`) is only persistence
+now, for reloads and moving between zones; the window event is gone.
+
+```
+$ pnpm test      → 12 passed (routing ×5; likes ×7: a consumer from the same module copy as the provider is connected,
+                   one from a separate copy is not; save/load, broken values, other tabs, storage blocked)
+$ pnpm typecheck → 3 packages successful
+$ pnpm build     → same routes as before
+```
+
+Locally (`next start` on 3100/3101 behind the microfrontends proxy), with a control build:
+
+| Build | Click Like in the blog card on `/horizontal` |
+|---|---|
+| both apps with `shared` | button `data-store="shell"`; the shell panel follows each click |
+| blog built with `shared: []` | button finds no shell provider; the shell panel stays at 0 |
+
+With the blog stopped, `/horizontal` still answered 200 and both slots showed their fallback.
+
+Commit `3ff8ea0` touched both apps and `packages/ui`, so both projects built (Production READY in 22–23 s, Preview 20–21 s).
+On https://mfe-lite-shell.vercel.app:
+
+```
+/, /horizontal, /blog, /blog/hello-world, /docs, /components/reactions, /components/latest-posts   all 200
+/horizontal HTML: "one React context" in the page; the remote's server HTML says data-store="blog"
+                  (the blog renders it under its own layout); the browser swaps in the shell's module on load
+```
+
+In a browser, starting from a saved count of 8:
+
+| # | Step | Result |
+|---|---|---|
+| 1 | `/horizontal` after load | button `data-store="shell"`; header, button and shell panel all show 8 |
+| 2 | three real clicks on the blog's Like | header, button and panel 11; saved count 11 |
+| 3 | `/blog/hello-world` (blog zone) | button `data-store="blog"` (the blog's own provider), header 11 |
+| 4 | a second tab on `/docs`, two clicks on the article's Like | first tab 13; the second tab shows 13 without reloading |
+| 5 | header Home → `/` (shell zone) | 13 |
+
+No console errors. The count stays per browser and per origin; a count shared by every visitor needs server-side storage.
