@@ -194,3 +194,70 @@ repository for both.
   all READY. Files outside the apps count as affecting every project; only a commit with no file changes was skipped.
 - A commit that changed only `apps/blog` (`5fbb141`) built only the blog, a Production and a Preview; both shell deployments
   were CANCELED as unaffected, and the shell kept serving its previous deployment.
+
+## Horizontal: one page, two deployments (2026-11-18)
+
+The shell's `/horizontal` page renders its own text plus two components built and served by the blog project, using
+`remote-components` 0.4.16. The blog exposes `/components/latest-posts` (a Server Component) and `/components/reactions` (a Client
+Component with a Like button), each wrapped in `ExposeRemoteComponent`; the shell embeds them with `ConsumeRemoteComponent`, each
+inside an error boundary and `Suspense`. `microfrontends.json` gives the blog a third routing group, `/components, /components/:path*`.
+`/horizontal` is rendered per request (`dynamic = "force-dynamic"`). On the server, a relative `src` resolves against
+`https://$VERCEL_PROJECT_PRODUCTION_URL` in production, so the fetch goes through the group's routing to the blog.
+
+```
+$ pnpm test      → 5 passed (routing contract ×2 incl. /components/*, shell proxy matcher ×3)
+$ pnpm typecheck → 3 packages successful
+$ pnpm build     → shell: /, /horizontal (dynamic), Proxy · blog: /, /blog, /blog/[slug], /components/latest-posts,
+                   /components/reactions, /docs, /docs/[slug], Proxy
+```
+
+Commit `2ccdb5d` touched both apps, `packages/ui` and the lockfile, so both projects built (Production and Preview each, all READY,
+25–26 s). On https://mfe-lite-shell.vercel.app:
+
+```
+/                          200 x-mfe-zone: shell     header nav: Home · Blog · Docs · Horizontal
+/horizontal                200 x-mfe-zone: shell
+/components/latest-posts   200 x-mfe-zone: blog
+/components/reactions      200 x-mfe-zone: blog
+/blog, /blog/hello-world   200 x-mfe-zone: blog
+/docs, /docs/routing       200 x-mfe-zone: blog
+/does-not-exist            404 x-mfe-zone: shell
+/lab.html                  200 x-mfe-zone: shell
+
+/horizontal HTML: both remotes server-rendered (data-remote="latest-posts", data-remote="reactions"), no fallback,
+                  build stamps 2ccdb5d ×3 (shell text, both blog cards), badges shell ×2, blog ×2
+blog chunks under /vc-ap-5d190e/ → 200 application/javascript
+```
+
+In a browser: three clicks on Like showed `Like · 3`, no console errors. Each remote sits in an open Shadow DOM, so
+`document.querySelector('[data-remote]')` from the page returns null. The blog loads 12 JavaScript chunks (about 190 KB
+transferred); the shell's own JavaScript is 12 chunks, about 187 KB.
+
+Commit `57e241f` changed only `apps/blog/app/components/latest-posts/page.tsx` (post summaries and an "All posts" link):
+
+```
+mfe-lite-shell  production  CANCELED  "The deployment was canceled because the commit didn't affect this project."
+mfe-lite-shell  preview     CANCELED
+mfe-lite-blog   production  READY     20 s
+mfe-lite-blog   preview     READY     18 s
+
+/horizontal after the blog deployment, no shell build:
+  shell text   build 2ccdb5d   (unchanged)
+  both cards   build 57e241f   ("All posts" link and summaries present)
+  the 10 blog chunk URLs referenced by the page before the deployment still returned 200
+```
+
+In a browser: Like still counted, "All posts" opened `/blog` (blog zone), and the blog header's Horizontal link returned to
+`/horizontal`.
+
+| # | Check | Result |
+|---|---|---|
+| 1 | `/components/*` → `x-mfe-zone: blog` | pass |
+| 2 | `/horizontal` HTML holds both remotes, server-rendered | pass |
+| 3 | the remote Client Component hydrates and counts clicks | pass |
+| 4 | a blog-only commit builds only the blog (shell CANCELED) | pass |
+| 5 | `/horizontal` shows the new blog build without a shell build | pass (shell `2ccdb5d`, blog `57e241f`) |
+
+Not checked on production: a blog outage. Locally, with the blog stopped, `/horizontal` answered 200 and both slots showed their
+fallback. Preview deployments are behind Deployment Protection, and outside production a relative `src` resolves against the
+branch or deployment URL, so `/horizontal` is only demonstrated on production.
