@@ -10,6 +10,8 @@ The demo shows both ways of splitting a frontend:
 - **Vertical**: each path belongs to one app. `/blog` and `/docs` are whole pages from the blog; `/` is a whole page from the shell.
 - **Horizontal**: one page holds pieces from both apps. The shell's `/horizontal` embeds two components that the blog builds and deploys.
 
+Across both, the two apps share one piece of state, a like count, through the browser rather than through code.
+
 ## Request flow
 
 ```
@@ -41,7 +43,7 @@ browser ◀── one HTML page: the shell's text + both blog components ── 
 | Piece | Where | What it does |
 |---|---|---|
 | `apps/blog/app/components/latest-posts/page.tsx` | blog | A Server Component wrapped in `ExposeRemoteComponent`; no client JavaScript |
-| `apps/blog/app/components/reactions/page.tsx` | blog | A Client Component (Like button) wrapped in `ExposeRemoteComponent`; hydrates inside the shell's page |
+| `apps/blog/app/components/reactions/page.tsx` | blog | A Client Component (Like button) wrapped in `ExposeRemoteComponent`; hydrates inside the shell's page; its count is shared (see below) |
 | `apps/shell/app/horizontal/page.tsx` | shell | The host page, `dynamic = "force-dynamic"`; two `RemoteSlot`s |
 | `apps/shell/app/horizontal/remote-slot.tsx` | shell | Error boundary → `Suspense` → `ConsumeRemoteComponent src="/components/…"` |
 | `microfrontends.json` | shell | A third blog routing group: `/components`, `/components/:path*` |
@@ -59,6 +61,34 @@ browser ◀── one HTML page: the shell's text + both blog components ── 
 - **Independence.** A commit that changes only `apps/blog` builds only the blog; the shell's deployment is canceled as unaffected,
   and the next request to `/horizontal` shows the new blog build (recorded in `EVIDENCE.md`).
 - **Old assets.** Right after a blog deployment, the blog chunk URLs referenced by the previous version of the page still answered 200.
+
+## Shared state
+
+```
+blog's Like button ──addLike()──▶ localStorage "mfe-lite:likes" ──read on load──▶ ♥ badge (any zone, any page)
+         │                                   │
+         └──window event "mfe-lite:likes"──▶ ♥ badge on the same page (the shell's header on /horizontal)
+                                             └──storage event──▶ ♥ badge in other tabs
+```
+
+| Piece | Where | What it does |
+|---|---|---|
+| `packages/ui/src/likes/store.ts` | both zones, one copy each | `readLikes`, `addLike`, `subscribeLikes`: the browser contract, no React |
+| `packages/ui/src/likes/client.tsx` | both zones, one copy each | `useLikes()` (`useSyncExternalStore`, 0 on the server) and the header's `LikesBadge` |
+| `packages/ui/src/header.tsx` | both zones | Renders `LikesBadge` next to the zone badge |
+| `apps/blog/app/components/reactions/reactions.tsx` | blog | The Like button: `addLike()` on click, `useLikes()` for its label; also used on each blog post |
+| `apps/shell/__tests__/likes.test.ts` | shell | Loads two copies of the module, as the two zones do, and checks they agree |
+
+- **Why the browser.** `remote-components` shares only `react`, `react-dom` and `next/*` with a remote. `@mfe-lite/ui` is bundled
+  by each zone, so a module variable or a React context in it would exist twice, even on `/horizontal` where both run in one
+  React tree. Between vertical pages there is no shared JavaScript at all: crossing zones is a full page load.
+- **One origin.** Visitors reach both zones on `mfe-lite-shell.vercel.app`, so both read and write the same `localStorage`. The
+  blog project's own domain is another origin with its own count.
+- **Same page, other pages, other tabs.** The `window` event updates every badge on the current page; `localStorage` carries the
+  count across reloads and zone changes; the browser's `storage` event updates other tabs. If storage is blocked, the count is
+  kept on `window` for the current page only.
+- **Failure.** With the blog stopped (checked locally), the shell's header still shows the stored count.
+- **Scope.** The count is per browser. A count shared by every visitor would need server-side storage.
 
 ## The two projects
 
@@ -78,7 +108,7 @@ Group `mfe-lite` (`vercel microfrontends create-group --name mfe-lite --default-
 `mfe-lite-blog` has default route `/docs`, fallback environment `SAME_ENV`. Deployments built before the group existed do not read
 `microfrontends.json`, so both projects were redeployed once after `create-group`.
 
-`packages/ui` holds the shared header. Its links use `Link` from `@vercel/microfrontends/next/client`: inside a zone a link stays a
+`packages/ui` holds the shared header and the shared-likes contract (`@mfe-lite/ui/likes`). The header's links use `Link` from `@vercel/microfrontends/next/client`: inside a zone a link stays a
 client-side navigation, into the other zone it becomes a full navigation. `withMicrofrontends` gives each app a copy of the routing
 table at build time (`NEXT_PUBLIC_MFE_CLIENT_CONFIG`), so `Link` knows which zone a path belongs to without a request. Links inside
 an embedded component are plain `<a>` tags: the component cannot know which zone its host page belongs to.

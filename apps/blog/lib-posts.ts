@@ -40,7 +40,7 @@ export const DOCS: Doc[] = [
       },
       { h: "Tests" },
       {
-        p: "`pnpm test` runs the routing contract tests in `apps/shell/__tests__/routing.test.ts`. `pnpm typecheck` and `pnpm build` cover the rest.",
+        p: "`pnpm test` runs the routing contract tests in `apps/shell/__tests__/routing.test.ts` and the shared-likes tests in `apps/shell/__tests__/likes.test.ts`. `pnpm typecheck` and `pnpm build` cover the rest.",
       },
     ],
   },
@@ -123,7 +123,7 @@ export const DOCS: Doc[] = [
       {
         list: [
           "`/components/latest-posts`: a Server Component. It arrives as HTML and needs no JavaScript.",
-          "`/components/reactions`: a Client Component with a Like button. Its JavaScript is built by the blog and hydrates inside the shell's page.",
+          "`/components/reactions`: a Client Component with a Like button. Its JavaScript is built by the blog and hydrates inside the shell's page, and its count also shows in the shell's header (see the next article).",
         ],
       },
       { h: "How it is wired" },
@@ -163,6 +163,59 @@ export const DOCS: Doc[] = [
     seeAlso: [
       { href: "/horizontal", label: "The /horizontal page" },
       { href: "/lab.html#horizontal", label: "Lab: the horizontal page, step by step" },
+    ],
+  },
+  {
+    slug: "shared-state",
+    title: "Sharing state between zones",
+    summary: "How a Like in a blog component updates a count in the shell's header, with no code shared at runtime.",
+    blocks: [
+      {
+        p: "Press Like in the blog's card on `/horizontal` and the ♥ count in the header follows. The header there is rendered by the shell; the button is built by this blog project. The count is the same on blog pages like this one, after a reload and in other tabs.",
+      },
+      { h: "Why not a shared store" },
+      {
+        list: [
+          "`remote-components` shares only `react`, `react-dom` and `next/*` between the shell and an embedded component. Everything else, `@mfe-lite/ui` included, is bundled once per zone.",
+          "So a module variable or a React context in a shared package would exist twice, even on `/horizontal`, where both apps run in one React tree.",
+          "Between whole pages there is nothing to share at all: moving from a shell page to a blog page is a full page load.",
+        ],
+      },
+      { h: "A browser contract" },
+      {
+        p: "Both zones are served from one origin, so they see the same browser storage. `@mfe-lite/ui/likes` agrees on three things:",
+      },
+      {
+        code: [
+          'localStorage  "mfe-lite:likes"   // the count; survives reloads and zone changes',
+          'window event  "mfe-lite:likes"   // fired after each change; updates the current page',
+          'window event  "storage"          // fired by the browser; updates other tabs',
+        ].join("\n"),
+      },
+      {
+        code: [
+          "// apps/blog/app/components/reactions/reactions.tsx",
+          'import { addLike, useLikes } from "@mfe-lite/ui/likes";',
+          "",
+          "const likes = useLikes();   // 0 on the server, then the browser's value",
+          "<button onClick={() => addLike()}>Like · {likes}</button>",
+        ].join("\n"),
+      },
+      {
+        p: "`useLikes()` is `useSyncExternalStore` over that contract. Each zone runs its own copy of this code, and the copies agree because they read and write the same key and listen for the same events. `apps/shell/__tests__/likes.test.ts` loads two copies and checks exactly that.",
+      },
+      { h: "Limits" },
+      {
+        list: [
+          "The count is per browser and per origin: the blog project's own domain keeps its own count. A count shared by every visitor would need server-side storage.",
+          "The key, the event names and the value format are an API between two apps. Change them like an API, with both sides deployed.",
+          "If the blog is down, the shell's header still shows the stored count; only the button is missing.",
+        ],
+      },
+    ],
+    seeAlso: [
+      { href: "/horizontal", label: "Try it on /horizontal" },
+      { href: "/lab.html#horizontal", label: "Lab: the horizontal page" },
     ],
   },
   {

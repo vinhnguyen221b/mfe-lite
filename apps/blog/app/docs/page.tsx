@@ -26,7 +26,8 @@ export default function Docs() {
         </li>
         <li>
           <strong>One page, two deployments:</strong> the shell&apos;s <a href="/horizontal">/horizontal</a> page embeds
-          two components that this blog project builds and deploys.
+          two components that this blog project builds and deploys. A Like pressed in one of them also updates the ♥
+          count in the shell&apos;s header.
         </li>
       </ol>
       <ul className="doc-list">

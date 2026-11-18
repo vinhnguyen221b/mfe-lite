@@ -165,6 +165,7 @@ svg .prow.miss{opacity:.35}
 svg text.halo{paint-order:stroke;stroke:var(--surface-2);stroke-width:4px;stroke-linejoin:round}
 .hz-page{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface-2)}
 .hz-bar{padding:.4rem .7rem;border-bottom:1px solid var(--line);color:var(--muted);font-size:.75rem;background:var(--surface);overflow-wrap:anywhere}
+.hz-head{display:flex;justify-content:space-between;align-items:center;gap:.6rem;padding:.4rem .8rem;border-bottom:1px solid var(--line);border-left:3px solid var(--accent);font-size:.82rem;background:var(--surface)}
 .hz-body{padding:.8rem;display:grid;gap:.6rem;border-left:3px solid var(--accent)}
 .hz-body p{font-size:.88rem}
 .hz-slot{border:1.5px dashed var(--info);border-radius:10px;padding:.6rem .7rem;background:var(--surface);min-width:0}
@@ -319,7 +320,7 @@ svg text.halo{paint-order:stroke;stroke:var(--surface-2);stroke-width:4px;stroke
       </div>
       <div class="card">
         <h3><svg class="ic"><use href="#i-box"/></svg>packages/ui</h3>
-        <p class="muted">The shared header. Its links use <code>Link</code> from <code>@vercel/microfrontends/next/client</code>: inside a zone a link stays client-side, into the other zone it becomes a full navigation. A badge shows <em>served by: shell | blog</em>, the same fact as the <code>x-mfe-zone</code> header.</p>
+        <p class="muted">The shared header. Its links use <code>Link</code> from <code>@vercel/microfrontends/next/client</code>: inside a zone a link stays client-side, into the other zone it becomes a full navigation. A badge shows <em>served by: shell | blog</em>, the same fact as the <code>x-mfe-zone</code> header, and a ♥ badge shows the like count both zones share through the browser (<code>@mfe-lite/ui/likes</code>).</p>
       </div>
     </div>
   </div>
@@ -328,7 +329,7 @@ svg text.halo{paint-order:stroke;stroke:var(--surface-2);stroke-width:4px;stroke
     <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-git"/></svg></div><div><b>Independent deploys</b><span>Each app builds, deploys and rolls back as its own project; a failed blog build leaves the shell up. A blog-only change builds only the blog.</span></div></div>
     <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-globe"/></svg></div><div><b>One URL</b><span>Visitors, cookies and links all live on the shell's domain. The blog project's own domain is never used by visitors.</span></div></div>
     <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-route"/></svg></div><div><b>One routing file</b><span><code>microfrontends.json</code> lists the paths the blog owns; Vercel applies it before any app code runs. <a href="#request">Follow a request →</a></span></div></div>
-    <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-panel"/></svg></div><div><b>One page, two deployments</b><span>The shell's <code>/horizontal</code> embeds two components the blog builds and deploys. <a href="#horizontal">See how →</a></span></div></div>
+    <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-panel"/></svg></div><div><b>One page, two deployments</b><span>The shell's <code>/horizontal</code> embeds two components the blog builds and deploys; a Like in one of them updates the shell's header. <a href="#horizontal">See how →</a></span></div></div>
   </div>
 </section>
 
@@ -479,6 +480,7 @@ svg text.halo{paint-order:stroke;stroke:var(--surface-2);stroke-width:4px;stroke
       <h3><svg class="ic"><use href="#i-panel"/></svg>The page, piece by piece</h3>
       <div class="hz-page" id="hz-page" data-blog="up">
         <div class="hz-bar mono">mfe-lite-shell.vercel.app/horizontal</div>
+        <div class="hz-head"><b>MFE Lite</b><span class="badge shell" title="The shell's header">♥ <span class="hz-count">0</span></span></div>
         <div class="hz-body">
           <p><b>One page, two deployments</b></p>
           <p class="muted">Shell text · <span class="badge shell">served by: shell</span> <span class="mono">build 2ccdb5d</span></p>
@@ -487,7 +489,7 @@ svg text.halo{paint-order:stroke;stroke:var(--surface-2);stroke-width:4px;stroke
             <div class="hz-down">Latest posts is unavailable right now. The rest of this page is unaffected.</div>
           </div>
           <div class="hz-slot">
-            <div class="hz-up"><b>Reactions</b><span><span class="badge dim">Like · 0</span></span><span><span class="badge blog">served by: blog</span> <span class="mono">build 57e241f</span></span></div>
+            <div class="hz-up"><b>Reactions</b><span><button class="btn" id="hz-like" type="button">Like · <span class="hz-count">0</span></button></span><span><span class="badge blog">served by: blog</span> <span class="mono">build 57e241f</span></span></div>
             <div class="hz-down">Reactions is unavailable right now. The rest of this page is unaffected.</div>
           </div>
         </div>
@@ -497,7 +499,7 @@ svg text.halo{paint-order:stroke;stroke:var(--surface-2);stroke-width:4px;stroke
         <button class="btn primary" id="hz-up" aria-pressed="true">up</button>
         <button class="btn" id="hz-down" aria-pressed="false">down</button>
       </div>
-      <p class="muted" id="hz-note">Both cards come from the blog's latest production deployment. The commits are the ones recorded after a blog-only deploy: the cards changed, the shell's text did not.</p>
+      <p class="muted" id="hz-note">Both cards come from the blog's latest production deployment. The commits are the ones recorded after a blog-only deploy: the cards changed, the shell's text did not. Press Like: the ♥ in the shell's header follows.</p>
     </div>
     <div class="grid">
       <div class="card zone-blog">
@@ -542,6 +544,47 @@ export default function ReactionsRemote() {
     <div class="card"><h3><svg class="ic"><use href="#i-bolt"/></svg>Not free</h3><p class="muted">The cards load the blog's own JavaScript: 12 files, about 190 KB transferred, next to the shell's 12 files, about 187 KB.</p></div>
     <div class="card"><h3><svg class="ic"><use href="#i-alert"/></svg>Limits</h3><p class="muted">Preview deployments sit behind Deployment Protection, so the page is shown on production only. Links inside a card are plain <code>&lt;a&gt;</code>. <code>remote-components</code> is 0.x.</p></div>
   </div>
+
+  <div class="sheet-head">
+    <h2>One count, two apps.</h2>
+    <p class="lead">The Like button is the blog's code; the ♥ in the header is the shell's. <code>remote-components</code> shares only <code>react</code>, <code>react-dom</code> and <code>next/*</code>, so each zone bundles its own copy of <code>@mfe-lite/ui</code>: a module variable or a React context there would exist twice. The two copies agree through the browser instead, which both zones reach on one origin.</p>
+  </div>
+
+  <div class="two">
+    <div class="card">
+      <h3><svg class="ic"><use href="#i-box"/></svg>The browser contract</h3>
+      <dl class="kv">
+        <dt><code>localStorage</code></dt><dd><code>mfe-lite:likes</code> holds the count: it survives a reload and a move between zones</dd>
+        <dt><code>window</code> event</dt><dd><code>mfe-lite:likes</code>, fired after each change: every badge on the current page updates</dd>
+        <dt><code>storage</code> event</dt><dd>fired by the browser in other tabs: their badges update without a reload</dd>
+      </dl>
+      <p class="muted">The count is per browser and per origin: the blog project's own domain keeps its own. A count shared by every visitor would need server-side storage.</p>
+    </div>
+    <div class="card zone-blog">
+      <h3><svg class="ic"><use href="#i-file"/></svg>Blog: the button</h3>
+<pre><code>// apps/blog/app/components/reactions/reactions.tsx
+import { addLike, useLikes } from "@mfe-lite/ui/likes";
+
+const likes = useLikes();   // useSyncExternalStore
+&lt;button onClick={() =&gt; addLike()}&gt;Like · {likes}&lt;/button&gt;</code></pre>
+      <p class="muted">The header renders <code>LikesBadge</code>, which calls the same <code>useLikes()</code>. <code>apps/shell/__tests__/likes.test.ts</code> loads two copies of the module, as the two zones do, and checks that they agree.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <caption>Shared likes on production, commit 31caaea, recorded on 2026-11-18</caption>
+      <thead><tr><th>Step</th><th>Zone</th><th>Header</th></tr></thead>
+      <tbody>
+        <tr><td>three Likes in the blog's card on <code>/horizontal</code></td><td><span class="badge shell">shell</span> page, <span class="badge blog">blog</span> card</td><td class="mono">♥ 3</td></tr>
+        <tr><td>reload <code>/horizontal</code></td><td><span class="badge shell">shell</span></td><td class="mono">♥ 3</td></tr>
+        <tr><td>open <code>/blog/hello-world</code>, two Likes</td><td><span class="badge blog">blog</span></td><td class="mono">♥ 5</td></tr>
+        <tr><td>header Home → <code>/</code></td><td><span class="badge shell">shell</span></td><td class="mono">♥ 5</td></tr>
+        <tr><td>a second tab on <code>/docs</code>, one Like in the first tab</td><td><span class="badge blog">blog</span></td><td class="mono">♥ 6, no reload</td></tr>
+        <tr><td><code>mfe-lite-blog.vercel.app/blog/hello-world</code></td><td>another origin</td><td class="mono">♥ 0</td></tr>
+      </tbody>
+    </table>
+  </div>
 </section>
 
 <!-- ================= CHECKS ================= -->
@@ -549,7 +592,7 @@ export default function ReactionsRemote() {
   <div class="sheet-head">
     <span class="eyebrow"><svg class="ic"><use href="#i-check"/></svg>Sheet 4 · Checks</span>
     <h2>Every claim has a curl behind it.</h2>
-    <p class="lead" id="ck-lead">Recorded against <code>https://mfe-lite-shell.vercel.app</code> after both projects were built from Git: the vertical checks on 2026-11-06, the horizontal ones on 2026-11-18, and all of them again on 2026-11-18 after the upgrade to <code>next</code> 16.4.6. Source: <code>EVIDENCE.md</code> in the repo. Toolchain: Vercel CLI 65.2.0, <code>@vercel/microfrontends</code> 2.4.2, <code>next</code> 16.4.6, <code>remote-components</code> 0.4.16.</p>
+    <p class="lead" id="ck-lead">Recorded against <code>https://mfe-lite-shell.vercel.app</code> after both projects were built from Git: the vertical checks on 2026-11-06, the horizontal ones on 2026-11-18, all of them again on 2026-11-18 after the upgrade to <code>next</code> 16.4.6, and the shared like count in a browser the same day. Source: <code>EVIDENCE.md</code> in the repo. Toolchain: Vercel CLI 65.2.0, <code>@vercel/microfrontends</code> 2.4.2, <code>next</code> 16.4.6, <code>remote-components</code> 0.4.16.</p>
   </div>
 
   <div class="table-wrap">
@@ -585,15 +628,16 @@ export default function ReactionsRemote() {
           <tr><td class="mono">6</td><td><code>/components/*</code> → <code>x-mfe-zone: blog</code></td><td><span class="badge ok">pass</span></td></tr>
           <tr><td class="mono">7</td><td><code>/horizontal</code> HTML holds both components; the Like button hydrates and counts</td><td><span class="badge ok">pass</span></td></tr>
           <tr><td class="mono">8</td><td>a blog-only commit builds only the blog, and <code>/horizontal</code> shows the new blog build</td><td><span class="badge ok">pass</span> <span class="mono">57e241f</span></td></tr>
+          <tr><td class="mono">9</td><td>a Like in the blog's card updates the shell's header; the count survives a reload and a move between zones, and reaches a second tab</td><td><span class="badge ok">pass</span> <span class="mono">31caaea</span></td></tr>
         </tbody>
       </table>
     </div>
     <div class="card">
       <h3><svg class="ic"><use href="#i-bolt"/></svg>Local toolchain results</h3>
       <dl class="kv">
-        <dt><code>pnpm test</code></dt><dd>5 passed (routing contract incl. <code>/horizontal</code> and <code>/components/*</code>, shell proxy matcher)</dd>
+        <dt><code>pnpm test</code></dt><dd>11 passed (routing contract incl. <code>/horizontal</code> and <code>/components/*</code>, shell proxy matcher, shared likes)</dd>
         <dt><code>pnpm typecheck</code></dt><dd>3 packages successful</dd>
-        <dt><code>pnpm build</code></dt><dd>shell: <code>/</code>, <code>/horizontal</code> (dynamic), Proxy · blog: <code>/</code>, <code>/blog</code>, <code>/blog/[slug]</code>, <code>/components/latest-posts</code>, <code>/components/reactions</code>, <code>/docs</code>, <code>/docs/[slug]</code> (five articles), Proxy</dd>
+        <dt><code>pnpm build</code></dt><dd>shell: <code>/</code>, <code>/horizontal</code> (dynamic), Proxy · blog: <code>/</code>, <code>/blog</code>, <code>/blog/[slug]</code>, <code>/components/latest-posts</code>, <code>/components/reactions</code>, <code>/docs</code>, <code>/docs/[slug]</code> (six articles), Proxy</dd>
         <dt>Builds</dt><dd>Git deploys of each project take about 20 s; a change only under <code>apps/blog</code> builds only the blog, a change outside the apps builds both</dd>
       </dl>
     </div>
@@ -611,7 +655,7 @@ curl -sI localhost:3024/docs    | grep x-mfe-zone   # blog
 curl -sI localhost:3024/components/reactions | grep x-mfe-zone   # blog
 open http://localhost:3024/horizontal              # needs the proxy on 3024
 
-pnpm test       # validateRouting + the shell proxy's matcher
+pnpm test       # validateRouting + the shell proxy's matcher + shared likes
 pnpm typecheck
 pnpm build</code></pre>
   </div>
@@ -621,8 +665,8 @@ pnpm build</code></pre>
 <section id="tab-cheatsheet" role="tabpanel" aria-labelledby="tab-btn-cheatsheet" hidden>
   <div class="sheet-head">
     <span class="eyebrow"><svg class="ic"><use href="#i-list"/></svg>Sheet 5 · Cheat sheet</span>
-    <h2>Ten rules this repo follows.</h2>
-    <p class="lead">Each rule is enforced in this repo by the contract tests in <code>apps/shell/__tests__/routing.test.ts</code> or was learned the hard way while deploying it (see <code>EVIDENCE.md</code>).</p>
+    <h2>Eleven rules this repo follows.</h2>
+    <p class="lead">Each rule is enforced in this repo by the tests in <code>apps/shell/__tests__/</code> or was learned the hard way while deploying it (see <code>EVIDENCE.md</code>).</p>
   </div>
 
   <ol class="rules">
@@ -636,11 +680,13 @@ pnpm build</code></pre>
     <li class="hobby"><div><b>Redeploy after <code>create-group</code>.</b> Deployments built before the group existed ignore <code>microfrontends.json</code>: the shell answered 404 on <code>/docs</code> until both projects were redeployed once. Verify with <code>curl -sI $HOST/docs | grep x-mfe-zone</code>.</div></li>
     <li><div><b>Embed from a path the child owns.</b> The blog exposes each embeddable component as a page under <code>/components/*</code>, wrapped in <code>ExposeRemoteComponent</code>; the shell renders <code>ConsumeRemoteComponent src="/components/…"</code>. A relative <code>src</code> goes through the same routing as a visitor. Both <code>next.config.ts</code> files use <code>withRemoteComponentsConfig(withMicrofrontends(config))</code>.</div></li>
     <li><div><b>Render the host per request and guard every slot.</b> <code>/horizontal</code> sets <code>dynamic = "force-dynamic"</code>, so the shell's build never depends on the blog and a blog deployment shows on the next request. Each slot sits in an error boundary and <code>Suspense</code>: with the blog down the page still answers 200 and shows a fallback.</div></li>
+    <li><div><b>Share state through the browser, not a shared module.</b> <code>remote-components</code> shares only <code>react</code>, <code>react-dom</code> and <code>next/*</code>; every other package, a workspace one included, is bundled once per zone, so its module variables and React contexts exist twice. The like count lives in <code>localStorage</code> under <code>mfe-lite:likes</code>, with a <code>mfe-lite:likes</code> event on <code>window</code> for the current page and the browser's <code>storage</code> event for other tabs. Treat the key and event names as an API between the apps.</div></li>
   </ol>
 
-  <div class="grid cols-2">
+  <div class="grid cols-3">
     <div class="card"><h3><svg class="ic"><use href="#i-check"/></svg>validateRouting</h3><p class="muted">From <code>@vercel/microfrontends/next/testing</code>. Each sample path lands in the expected app: <code>/</code>, <code>/does-not-exist</code>, <code>/lab.html</code>, <code>/horizontal</code> in the shell; <code>/blog</code>, <code>/blog/hello-world</code>, <code>/docs</code>, <code>/docs/getting-started</code>, <code>/components/latest-posts</code>, <code>/components/reactions</code> in the blog. None of the blog's paths may fall through to the shell.</p></div>
     <div class="card"><h3><svg class="ic"><use href="#i-check"/></svg>unstable_doesMiddlewareMatch</h3><p class="muted">From <code>next/experimental/testing/server</code>. The shell proxy's matcher runs for the shell's paths and skips <code>/blog</code>, <code>/docs</code>, <code>/components</code>, <code>/vc-ap-…</code> and <code>/_next/…</code>, but not <code>/blogroll</code>, <code>/docsify</code> or <code>/componentry</code>.</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-check"/></svg>likes.test.ts</h3><p class="muted">Loads <code>@mfe-lite/ui/likes</code> twice with <code>vi.resetModules()</code>, as the two zones bundle it, and checks that both copies see the same count, that another tab's <code>storage</code> event is followed, that a broken stored value reads as 0, and that the copies still agree when storage is blocked.</p></div>
   </div>
 
   <div class="card">
@@ -805,8 +851,13 @@ pnpm build</code></pre>
   const hzPage = $('#hz-page'), hzUp = $('#hz-up'), hzDown = $('#hz-down'), hzNote = $('#hz-note');
   const HZ_NOTE = {
     up: hzNote.textContent,
-    down: 'Each slot’s error boundary caught the failed fetch: the page still answers 200 with the shell’s text and a fallback in each slot. Checked locally with the blog stopped.'
+    down: 'Each slot’s error boundary caught the failed fetch: the page still answers 200 with the shell’s text and a fallback in each slot. The ♥ in the shell’s header still shows the stored count. Checked locally with the blog stopped.'
   };
+  let hzLikes = 0;
+  $('#hz-like').addEventListener('click', () => {
+    hzLikes += 1;
+    document.querySelectorAll('.hz-count').forEach(el => { el.textContent = String(hzLikes); });
+  });
   function setBlog(state){
     hzPage.dataset.blog = state;
     hzUp.setAttribute('aria-pressed', String(state === 'up')); hzUp.classList.toggle('primary', state === 'up');
