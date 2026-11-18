@@ -13,6 +13,10 @@ export default function Home() {
           <code>/docs</code>. The <a href="/lab.html">interactive lab</a> traces a request step by step.
         </p>
       </div>
+      <p>
+        Those are whole pages from one app each. <a href="/horizontal">/horizontal</a> shows the other way: one shell page
+        with two components from the blog inside it.
+      </p>
     </>
   );
 }

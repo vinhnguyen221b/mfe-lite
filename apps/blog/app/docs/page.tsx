@@ -8,7 +8,10 @@ export default function Docs() {
   return (
     <>
       <h1>Docs</h1>
-      <p>MFE Lite shows three things and nothing else:</p>
+      <p>
+        MFE Lite shows four things and nothing else. The first three split the site by path (vertical); the fourth puts
+        both apps on one page (horizontal):
+      </p>
       <ol>
         <li>
           <strong>One domain</strong> in front of two independently deployed Next.js apps.
@@ -19,7 +22,11 @@ export default function Docs() {
         </li>
         <li>
           <strong>One routing file:</strong> <code>microfrontends.json</code> in the shell lists the paths the blog owns
-          (<code>/blog</code>, <code>/docs</code>); the shell answers everything else.
+          (<code>/blog</code>, <code>/docs</code>, <code>/components</code>); the shell answers everything else.
+        </li>
+        <li>
+          <strong>One page, two deployments:</strong> the shell&apos;s <a href="/horizontal">/horizontal</a> page embeds
+          two components that this blog project builds and deploys.
         </li>
       </ol>
       <ul className="doc-list">

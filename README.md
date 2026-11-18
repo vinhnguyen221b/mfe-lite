@@ -2,33 +2,58 @@
 
 The smallest honest demo of [Vercel Microfrontends](https://vercel.com/docs/microfrontends) on the Hobby plan, cost $0.
 
-**Live demo:** https://mfe-lite-shell.vercel.app · **Interactive lab:** https://mfe-lite-shell.vercel.app/lab.html
+**Live demo:** https://mfe-lite-shell.vercel.app · **Horizontal page:** https://mfe-lite-shell.vercel.app/horizontal · **Interactive lab:** https://mfe-lite-shell.vercel.app/lab.html
 
-It shows the three things that matter and nothing else:
+It shows the four things that matter and nothing else. The first three are the **vertical** split, where each path belongs to one app; the fourth is the **horizontal** split, where one page holds pieces from both apps:
 
 1. **One domain** in front of two independently built Next.js apps.
 2. **Independent deployments**: each app is its own Vercel project with its own builds, deployments and rollbacks; a failed blog build leaves the shell up.
 3. **One routing file**: `microfrontends.json` in the shell lists the paths the blog owns; Vercel applies it before any app code runs.
+4. **One page, two deployments**: the shell's `/horizontal` page embeds two components that the blog project builds and deploys. A blog-only deployment changes them without a shell build.
 
 | App | Package | Role | Paths | Vercel project |
 |---|---|---|---|---|
-| `apps/shell` | `@mfe-lite/shell` | Default app; owns `microfrontends.json` | `/` and every path nobody claims | `mfe-lite-shell` |
-| `apps/blog` | `@mfe-lite/blog` | Child zone | `/blog`, `/blog/*`, `/docs`, `/docs/*` | `mfe-lite-blog` |
+| `apps/shell` | `@mfe-lite/shell` | Default app; owns `microfrontends.json`; hosts `/horizontal` | `/` and every path nobody claims | `mfe-lite-shell` |
+| `apps/blog` | `@mfe-lite/blog` | Child zone; serves the embedded components | `/blog`, `/blog/*`, `/docs`, `/docs/*`, `/components/*` | `mfe-lite-blog` |
 
 `packages/ui` holds the shared header. Its links use `Link` from `@vercel/microfrontends/next/client`, so a link inside a zone stays a client-side navigation and a link into the other zone becomes a full navigation, and a small badge shows which zone rendered the page.
 
-## Request flow
+## Request flow (vertical)
 
 ```mermaid
 flowchart LR
   B[Browser] -->|"https://mfe-lite-shell.vercel.app/..."| V[Vercel routing<br/>group mfe-lite]
-  V -->|"/blog, /blog/*, /docs, /docs/*"| BLOG[blog project]
+  V -->|"/blog/*, /docs/*, /components/*"| BLOG[blog project]
   V -->|everything else| SHELL[shell project]
 ```
 
-Ownership is decided by Vercel's routing layer before any code runs: `/blog` and `/docs` go to the blog project, every other path to the shell. Neither app forwards requests to the other; the shell never sees `/blog` or `/docs`.
+Ownership is decided by Vercel's routing layer before any code runs: `/blog`, `/docs` and `/components` go to the blog project, every other path to the shell. Neither app forwards requests to the other; the shell never sees `/blog` or `/docs`.
 
 Every response carries `x-mfe-zone: shell | blog`, set by each zone's `proxy.ts`, so routing can be checked with curl. That header is the proxies' only job.
+
+## One page, two deployments (horizontal)
+
+```mermaid
+flowchart LR
+  B[Browser] -->|"GET /horizontal"| V[Vercel routing]
+  V --> SHELL[shell renders /horizontal]
+  SHELL -->|"server fetch /components/latest-posts<br/>/components/reactions"| V2[Vercel routing]
+  V2 --> BLOG[blog renders each component]
+  BLOG -->|HTML| SHELL
+  SHELL -->|"one HTML page"| B
+```
+
+- The blog exposes two pages under `/components/*`, a path group it owns in `microfrontends.json`: `latest-posts` (a Server Component, no client JavaScript) and `reactions` (a Client Component with a Like button). Each is wrapped in `ExposeRemoteComponent` from [`remote-components`](https://www.npmjs.com/package/remote-components) (0.4.16, pinned).
+- The shell's `/horizontal` page renders its own text and two `ConsumeRemoteComponent` slots. On the server, a relative `src` resolves against `https://$VERCEL_PROJECT_PRODUCTION_URL` in production, so the fetch goes through the same routing and reaches the blog. The page arrives with both components already in the HTML; the Like button then hydrates with JavaScript loaded from the blog's `/vc-ap-<hash>/` prefix.
+- The page is rendered per request (`dynamic = "force-dynamic"`), so a blog deployment shows up on the next page load. Each slot sits in an error boundary and `Suspense`: if the blog is down, the page still answers 200 and the slot shows a fallback.
+- Each card prints `served by: blog` and the blog's build commit; the page text prints the shell's. After a blog-only commit, the shell's deployment is canceled as unaffected and the cards show the new blog commit while the shell's stays the same (see [EVIDENCE.md](EVIDENCE.md)).
+
+What it costs, measured on production:
+
+- Each embedded component renders inside an open Shadow DOM: its CSS cannot leak into the shell, but `document.querySelector` on the page does not see it.
+- The embedded components bring the blog's own JavaScript: 12 files, about 190 KB transferred, roughly as much as the shell's own JavaScript.
+- Preview deployments are behind Deployment Protection, and outside production a relative `src` resolves against the branch URL, so `/horizontal` is only demonstrated on production.
+- `remote-components` is a 0.x package; its API may still change.
 
 ## Local workflow
 
@@ -37,13 +62,16 @@ pnpm install
 pnpm dev        # Turborepo starts shell (3000), blog (3001) and the microfrontends proxy on 3024
 ```
 
-Open http://localhost:3024. Then:
+Open http://localhost:3024 (and http://localhost:3024/horizontal). Then:
 
 ```bash
-curl -sI localhost:3024/        | grep x-mfe-zone   # shell
-curl -sI localhost:3024/blog    | grep x-mfe-zone   # blog
-curl -sI localhost:3024/docs    | grep x-mfe-zone   # blog
+curl -sI localhost:3024/                         | grep x-mfe-zone   # shell
+curl -sI localhost:3024/blog                     | grep x-mfe-zone   # blog
+curl -sI localhost:3024/docs                     | grep x-mfe-zone   # blog
+curl -sI localhost:3024/components/latest-posts  | grep x-mfe-zone   # blog
 ```
+
+Outside Vercel, a relative remote `src` resolves against the local proxy (`http://localhost:3024`), so `/horizontal` needs the proxy running.
 
 ```bash
 pnpm test        # routing contract tests (apps/shell/__tests__/routing.test.ts)
@@ -51,7 +79,7 @@ pnpm typecheck
 pnpm build
 ```
 
-`validateRouting` (from `@vercel/microfrontends/next/testing`) checks that each sample path lands in the expected app and that none of the blog's paths falls through to the shell. `unstable_doesMiddlewareMatch` (from `next/experimental/testing/server`) checks that the shell proxy's matcher runs for the shell's paths and skips `/blog`, `/docs`, the `vc-ap-*` asset prefix and `_next`.
+`validateRouting` (from `@vercel/microfrontends/next/testing`) checks that each sample path lands in the expected app and that none of the blog's paths falls through to the shell. `unstable_doesMiddlewareMatch` (from `next/experimental/testing/server`) checks that the shell proxy's matcher runs for the shell's paths and skips `/blog`, `/docs`, `/components`, the `vc-ap-*` asset prefix and `_next`.
 
 ## Deploy (Vercel Hobby)
 
@@ -65,7 +93,7 @@ pnpm build
 3. Connect both projects to the repo (`vercel git connect`, from the repo root and with `--cwd apps/blog`) and push to `main`. Each project builds only its own app (the `--filter` in its build command) and skips commits that do not affect it: a change only under `apps/blog` builds the blog alone, while a change outside the apps, such as a doc at the repo root, builds both. The group composes them on the shell's domain. Deployments built before the group existed must be redeployed once.
    A CLI deploy must also run from the repo root (`vercel deploy --prod --project <name>`): from inside `apps/<app>` the upload lacks the monorepo root and fails with "Root Directory does not exist".
 
-## The three checks
+## The four checks
 
 Against the shell's production domain (`$HOST=https://mfe-lite-shell.vercel.app`):
 
@@ -74,20 +102,24 @@ Against the shell's production domain (`$HOST=https://mfe-lite-shell.vercel.app`
 | One domain | `curl -sI $HOST/blog \| grep x-mfe-zone`, same for `/docs` | `blog` (shell `/` answers `shell`) |
 | Independent deployments | push a change under `apps/blog` only | only the blog builds; the shell's deployment is canceled as unaffected and `/` keeps serving its current deployment; each project keeps its own deployment list and rollback |
 | One routing file | `curl -sI $HOST/does-not-exist \| grep -E '^HTTP\|x-mfe-zone'` | `404`, `shell`: nobody claims the path, so the default app answers |
+| One page, two deployments | `curl -s $HOST/horizontal \| grep -o 'data-remote="[a-z-]*"'`, then push a change under `apps/blog/app/components` only | both remotes in the HTML; after the blog-only deploy the cards show the new blog commit, the page text keeps the shell's |
 
 Blog assets load under `/vc-ap-<hash>/_next/...`, the hashed prefix `withMicrofrontends` gives the child zone. Recorded outputs: [EVIDENCE.md](EVIDENCE.md).
 
 ## Gotchas this demo encodes
 
-- The shell's matcher must exclude `_next/`, `vc-ap-` and the child-owned `/blog` and `/docs` paths, or the shell shadows the child.
+- The shell's matcher must exclude `_next/`, `vc-ap-` and the child-owned `/blog`, `/docs` and `/components` paths, or the shell shadows the child.
 - `withMicrofrontends` injects `MFE_CONFIG`, `NEXT_PUBLIC_MFE_CURRENT_APPLICATION` and the client's copy of the routing table at build time; the shared `Link` reads that copy to tell same-zone links from cross-zone ones.
-- Hobby: one microfrontends group per team, two projects per group.
+- Both `next.config.ts` files wrap the config as `withRemoteComponentsConfig(withMicrofrontends(config))`.
+- A link inside an embedded component is a plain `<a>`: the component does not know which zone the host page belongs to.
+- Hobby: one microfrontends group per team, two projects per group. The embedded components come from the blog, not a third project.
 - Vercel skips a project that a commit does not affect (`enableAffectedProjectsDeployments`, on for both projects): a change only under `apps/blog` builds only the blog. A change outside the apps, even a doc at the repo root, builds both, and a commit with no file changes builds neither.
+- Turborepo's remote cache can replay an app's previous build when its inputs did not change, and `VERCEL_GIT_COMMIT_SHA` is not part of the cache key here. So the build commit printed on a static page (the blog's cards) is the last commit that changed that app; the shell's `/horizontal`, rendered per request, prints the deployed commit.
 
 ## Learn more
 
-- [docs/architecture.md](docs/architecture.md): request flow, the two projects and their settings, local vs production.
-- [apps/shell/public/lab.html](apps/shell/public/lab.html), live at https://mfe-lite-shell.vercel.app/lab.html: a self-contained interactive lab served by the shell as a static file: overview, animated request flow with a path picker, the recorded checks, and an eight-rule cheat sheet for `microfrontends.json`, the proxy matcher and cross-zone links.
+- [docs/architecture.md](docs/architecture.md): request flow, the horizontal page, the two projects and their settings, local vs production.
+- [apps/shell/public/lab.html](apps/shell/public/lab.html), live at https://mfe-lite-shell.vercel.app/lab.html: a self-contained interactive lab served by the shell as a static file: overview, animated request flow with a path picker, the horizontal page step by step, the recorded checks, and a ten-rule cheat sheet for `microfrontends.json`, the proxy matcher, cross-zone links and embedded components.
 
 ## License
 

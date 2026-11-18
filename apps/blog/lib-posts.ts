@@ -50,18 +50,19 @@ export const DOCS: Doc[] = [
     summary: "How one domain is split between two apps, decided before any app code runs.",
     blocks: [
       {
-        p: "`microfrontends.json` in the default app is the only routing table. The shell declares no routes: it owns every path that nobody else claims. The blog claims two groups of paths:",
+        p: "`microfrontends.json` in the default app is the only routing table. The shell declares no routes: it owns every path that nobody else claims. The blog claims three groups of paths:",
       },
       {
         code: [
           '{ "group": "blog", "paths": ["/blog", "/blog/:path*"] },',
-          '{ "group": "docs", "paths": ["/docs", "/docs/:path*"] }',
+          '{ "group": "docs", "paths": ["/docs", "/docs/:path*"] },',
+          '{ "group": "components", "paths": ["/components", "/components/:path*"] }',
         ].join("\n"),
       },
       { h: "One decision, before any code runs" },
       {
         list: [
-          "Vercel's routing layer matches the path against the table. `/blog` and `/docs` go straight to the blog project; the shell never sees them.",
+          "Vercel's routing layer matches the path against the table. `/blog`, `/docs` and `/components` go straight to the blog project; the shell never sees them.",
           "Every other path, `/` included, goes to the shell, which answers with its own page or its 404.",
         ],
       },
@@ -69,7 +70,7 @@ export const DOCS: Doc[] = [
       {
         list: [
           "The shell's `proxy.ts` only stamps `x-mfe-zone: shell`; it makes no routing decision.",
-          "Its matcher excludes `_next/`, `vc-ap-` and the blog's `/blog` and `/docs` paths, or the shell would shadow the blog and its assets.",
+          "Its matcher excludes `_next/`, `vc-ap-` and the blog's `/blog`, `/docs` and `/components` paths, or the shell would shadow the blog and its assets.",
         ],
       },
       {
@@ -110,6 +111,59 @@ export const DOCS: Doc[] = [
       },
     ],
     seeAlso: [{ href: "/lab.html#cheatsheet", label: "Lab: cheat sheet" }],
+  },
+  {
+    slug: "horizontal",
+    title: "One page, two deployments",
+    summary: "How the shell's /horizontal page embeds components that the blog builds and deploys.",
+    blocks: [
+      {
+        p: "Routing splits the site by path: each page comes from one app. The shell's `/horizontal` page goes one step further and puts both apps on one page: its own text, plus two components rendered by this blog project.",
+      },
+      {
+        list: [
+          "`/components/latest-posts`: a Server Component. It arrives as HTML and needs no JavaScript.",
+          "`/components/reactions`: a Client Component with a Like button. Its JavaScript is built by the blog and hydrates inside the shell's page.",
+        ],
+      },
+      { h: "How it is wired" },
+      {
+        p: "The blog wraps each component page in `ExposeRemoteComponent` from `remote-components`. The shell renders `ConsumeRemoteComponent` with a relative `src`, inside an error boundary and `Suspense`:",
+      },
+      {
+        code: [
+          "// apps/shell/app/horizontal/remote-slot.tsx",
+          "<SlotBoundary label={label}>",
+          "  <Suspense fallback={<div className=\"card\">Loading {label}…</div>}>",
+          "    <ConsumeRemoteComponent src={src} />",
+          "  </Suspense>",
+          "</SlotBoundary>",
+        ].join("\n"),
+      },
+      {
+        list: [
+          "On the server, the shell fetches `https://mfe-lite-shell.vercel.app/components/<name>`. That request goes through the same routing as a visitor's, so it reaches the blog's current production deployment.",
+          "The page is rendered per request, so a blog deployment shows up on the next page load without a shell build.",
+          "If the blog is down, the page still answers and each slot shows its fallback.",
+        ],
+      },
+      { h: "What it costs" },
+      {
+        list: [
+          "Each component renders in an open Shadow DOM: the blog's CSS stays inside it, and page-level selectors do not see it.",
+          "The components bring the blog's own JavaScript, about as much as the shell's.",
+          "Links inside a component are plain `<a>` tags: the component does not know which zone its host page belongs to.",
+          "Preview deployments are behind Deployment Protection, so the page is demonstrated on production only.",
+        ],
+      },
+      {
+        p: "Each card prints the blog's build commit and the page text prints the shell's, so a blog-only deployment is visible on the page: the cards change, the shell's commit does not.",
+      },
+    ],
+    seeAlso: [
+      { href: "/horizontal", label: "The /horizontal page" },
+      { href: "/lab.html#horizontal", label: "Lab: the horizontal page, step by step" },
+    ],
   },
   {
     slug: "deploy",

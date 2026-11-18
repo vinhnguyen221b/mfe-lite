@@ -261,3 +261,9 @@ In a browser: Like still counted, "All posts" opened `/blog` (blog zone), and th
 Not checked on production: a blog outage. Locally, with the blog stopped, `/horizontal` answered 200 and both slots showed their
 fallback. Preview deployments are behind Deployment Protection, and outside production a relative `src` resolves against the
 branch or deployment URL, so `/horizontal` is only demonstrated on production.
+
+Commit `caa5c1a` changed only `EVIDENCE.md` at the repo root, so both projects built (Production and Preview each, READY, 11–13 s).
+Both builds were Turborepo remote-cache hits ("cache hit, replaying logs"): the app inputs had not changed, and
+`VERCEL_GIT_COMMIT_SHA` is not part of the cache key. Afterwards `/horizontal` showed the shell text at `caa5c1a` (rendered per
+request, so it reads the deployment's environment) and both blog cards still at `57e241f` (static pages, replayed from the cache).
+The build commit printed on a static page is the last commit that changed that app.
