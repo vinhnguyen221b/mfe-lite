@@ -349,3 +349,30 @@ No console errors on `/horizontal` or `/docs`. Not checked on production: a blog
 `/horizontal` still showed the stored count in the header and both slots showed their fallback.
 
 The count is per browser and per origin. A count shared by every visitor would need server-side storage.
+
+## Blueprint redesign, no build stamp
+
+Commit `4f5c0d3` restyled every page (one shared stylesheet in `packages/ui`) and removed the build commit that `/horizontal`
+and both blog cards used to print: it was easy to misread (see the Turborepo cache note above). Deploy independence is shown
+by the Vercel deployment list instead. `/horizontal` now frames each blog component in a dashed box and shows the shared count
+in a shell panel next to the Like button.
+
+```
+$ pnpm test      → 11 passed
+$ pnpm typecheck → 3 packages successful
+$ pnpm build     → same routes as before
+```
+
+The commit touched both apps and `packages/ui`, so both projects built (Production READY in 21–23 s). On
+https://mfe-lite-shell.vercel.app:
+
+```
+/, /horizontal, /lab.html                                   x-mfe-zone: shell   (all 200)
+/blog, /blog/hello-world, /docs, /docs/horizontal,
+/components/reactions                                       x-mfe-zone: blog    (all 200)
+
+/horizontal HTML: header likes pill, two shell-drawn slots, both remotes server-rendered, shell panel, no "build <sha>"
+```
+
+In a browser on `/horizontal`, two clicks on the blog's Like took the header pill, the shell panel and the button from 6 to 8;
+`/blog/hello-world` then showed 8 with "Blog" marked as the current page. No console errors.
