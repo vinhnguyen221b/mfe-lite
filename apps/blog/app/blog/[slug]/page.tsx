@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Reactions } from "@/app/components/reactions/reactions";
 import { POSTS } from "@/lib-posts";
 
 export function generateStaticParams() {
@@ -23,6 +24,7 @@ export default async function Post({ params }: PageProps<"/blog/[slug]">) {
       </p>
       <h1>{post.title}</h1>
       <p>{post.body}</p>
+      <Reactions />
     </article>
   );
 }

@@ -1,6 +1,7 @@
 // Shared header. Links use the microfrontends Link: inside a zone it behaves like next/link,
 // across zones it becomes a full navigation (and can be prefetched with PrefetchCrossZoneLinks).
 import { Link } from "@vercel/microfrontends/next/client";
+import { LikesBadge } from "./likes/client";
 import { ZoneBadge, type Zone } from "./zone-badge";
 
 const NAV = [
@@ -23,6 +24,7 @@ export function Header({ zone }: { zone: Zone }) {
           </Link>
         ))}
       </nav>
+      <LikesBadge />
       <ZoneBadge zone={zone} />
     </header>
   );
