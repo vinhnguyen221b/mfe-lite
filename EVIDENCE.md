@@ -267,3 +267,32 @@ Both builds were Turborepo remote-cache hits ("cache hit, replaying logs"): the 
 `VERCEL_GIT_COMMIT_SHA` is not part of the cache key. Afterwards `/horizontal` showed the shell text at `caa5c1a` (rendered per
 request, so it reads the deployment's environment) and both blog cards still at `57e241f` (static pages, replayed from the cache).
 The build commit printed on a static page is the last commit that changed that app.
+
+## Next.js 16.4.6 (2026-11-18)
+
+`next` 16.4.3 was affected by two moderate advisories, GHSA-mfr8-8qww-v76h and GHSA-vc7v-qv4w-wrv8, both about `'use cache'`
+and `unstable_cache()`, which this repo does not use. Commit `8e00da8` pins `next` 16.4.6 in both apps and `packages/ui`.
+
+```
+$ pnpm audit --prod → no advisories for next
+$ pnpm test         → 5 passed
+$ pnpm typecheck    → 3 packages successful
+$ pnpm build        → Next.js 16.4.6 (Turbopack), same routes as before
+```
+
+The lockfile changed, so both projects built from scratch (Turborepo cache miss), Production and Preview each, all READY in
+28–32 s. On https://mfe-lite-shell.vercel.app:
+
+```
+/                          200 x-mfe-zone: shell
+/horizontal                200 x-mfe-zone: shell     both remotes server-rendered, no fallback, build 8e00da8 ×3
+/components/latest-posts   200 x-mfe-zone: blog
+/components/reactions      200 x-mfe-zone: blog
+/blog, /blog/hello-world   200 x-mfe-zone: blog
+/docs, /docs/routing       200 x-mfe-zone: blog
+/does-not-exist            404 x-mfe-zone: shell
+/lab.html                  200 x-mfe-zone: shell
+blog chunks under /vc-ap-5d190e/ → 200 application/javascript
+```
+
+In a browser, two clicks on Like showed `Like · 2`, with no console errors.
