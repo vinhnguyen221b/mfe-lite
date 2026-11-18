@@ -14,10 +14,13 @@ export default function LatestPostsRemote() {
           {POSTS.map((p) => (
             <li key={p.slug}>
               {/* A plain <a>: /blog belongs to another zone from the host's point of view. */}
-              <a href={`/blog/${p.slug}`}>{p.title}</a>
+              <a href={`/blog/${p.slug}`}>{p.title}</a>: {p.body}
             </li>
           ))}
         </ul>
+        <p>
+          <a href="/blog">All posts</a>
+        </p>
         <ZoneBadge zone="blog" /> <code>build {BUILD}</code>
       </section>
     </ExposeRemoteComponent>
