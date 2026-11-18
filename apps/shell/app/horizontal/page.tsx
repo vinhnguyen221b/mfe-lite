@@ -33,14 +33,15 @@ export default function Horizontal() {
         <div className="pair">
           <RemoteSlot src="/components/reactions" label="Reactions" />
           <div className="wire" aria-hidden="true">
-            <span>localStorage + window event</span>
+            <span>one React context</span>
           </div>
           <section className="shell-panel" aria-labelledby="shared-count">
             <span className="tag">shell</span>
             <h2 id="shared-count">Shared like count</h2>
             <LikesMeter />
             <p className="small muted">
-              Rendered by the shell. It follows every Like in the blog&apos;s card, like the ♥ in the header.
+              Rendered by the shell. It reads the same React context the blog&apos;s button writes into, like the ♥ in
+              the header.
             </p>
           </section>
         </div>
@@ -53,18 +54,24 @@ export default function Horizontal() {
             <li className="card">
               <span className="tag">blog · button</span>
               <p>
-                Like adds one to the localStorage key <code>mfe-lite:likes</code>.
+                Like calls <code>like()</code> from <code>LikesContext</code>. Both apps list{" "}
+                <code>@mfe-lite/ui/likes-context</code> as <code>shared</code>, so the blog&apos;s import is the
+                shell&apos;s module.
               </p>
             </li>
             <li className="card">
-              <span className="tag">browser</span>
+              <span className="tag">shell · provider</span>
               <p>
-                It fires the <code>mfe-lite:likes</code> window event. Other tabs get a <code>storage</code> event.
+                The shell&apos;s <code>LikesProvider</code>, in its layout, updates its state. The panel and the ♥ in the
+                header re-render.
               </p>
             </li>
             <li className="card">
-              <span className="tag">shell · header and panel</span>
-              <p>Each copy of the likes code re-reads the key. A reload or a blog page keeps the count.</p>
+              <span className="tag">browser · saved</span>
+              <p>
+                The provider saves the count, so a reload or a blog page starts from it. A count for every visitor would
+                need a server store.
+              </p>
             </li>
           </ol>
         </section>

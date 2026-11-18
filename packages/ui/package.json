@@ -12,6 +12,10 @@
       "types": "./src/likes/index.ts",
       "default": "./src/likes/index.ts"
     },
+    "./likes-context": {
+      "types": "./src/likes/context.tsx",
+      "default": "./src/likes/context.tsx"
+    },
     "./styles.css": "./src/styles.css"
   },
   "scripts": {

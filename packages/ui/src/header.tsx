@@ -1,5 +1,5 @@
 // Shared header, rendered by each zone. The zone badge says which project rendered the page;
-// the likes badge shows the count both zones share through the browser.
+// the likes badge reads the LikesProvider that the zone's layout renders around it.
 import { Link } from "@vercel/microfrontends/next/client";
 import { LikesBadge } from "./likes/client";
 import { Nav } from "./nav";

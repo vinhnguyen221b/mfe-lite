@@ -1,56 +1,42 @@
-// Shared likes: a browser contract, not a shared module instance.
+// Persistence for the like count. Not how components share it: they share a React context (see context.tsx).
 //
-// Each zone bundles its own copy of this file (remote-components only shares react, react-dom and next/*),
-// so a module-level variable or a React context here would exist twice. The copies agree through the
-// browser instead, which both zones reach because they are served from one origin:
-//   - localStorage key LIKES_KEY holds the count, so it survives reloads and cross-zone navigations;
-//   - a window event LIKES_EVENT tells every copy on the current page that the count changed;
-//   - the browser's own `storage` event does the same for other tabs.
+// A context lives as long as the page. A full page load (a reload, or moving between zones) starts a new React
+// tree, so each zone's LikesProvider loads the count from here when it mounts and saves it after each Like.
+// Both zones are served from one origin, so they read the same key. A count shared by every visitor would need
+// a server store instead.
 
 export const LIKES_KEY = "mfe-lite:likes";
-export const LIKES_EVENT = "mfe-lite:likes";
-
-// Used only when localStorage throws (storage blocked): kept on window so both zones' copies still share it.
-const MEMORY = Symbol.for(LIKES_KEY);
-type LikesWindow = Window & { [MEMORY]?: number };
 
 function toCount(value: unknown): number {
   const n = Number(value);
   return Number.isSafeInteger(n) && n > 0 ? n : 0;
 }
 
-/** Current count in this browser; 0 on the server. */
-export function readLikes(): number {
+/** Saved count in this browser; 0 on the server or when storage is blocked. */
+export function loadLikes(): number {
   if (typeof window === "undefined") return 0;
   try {
     return toCount(window.localStorage.getItem(LIKES_KEY));
   } catch {
-    return toCount((window as LikesWindow)[MEMORY]);
+    return 0;
   }
 }
 
-/** Adds one like and tells every zone on this page. Returns the new count. */
-export function addLike(): number {
-  const next = readLikes() + 1;
+/** Saves the count. Blocked storage only costs persistence, so errors are ignored. */
+export function saveLikes(count: number): void {
   try {
-    window.localStorage.setItem(LIKES_KEY, String(next));
+    window.localStorage.setItem(LIKES_KEY, String(count));
   } catch {
-    (window as LikesWindow)[MEMORY] = next;
+    // storage blocked: the count still works for this page view
   }
-  window.dispatchEvent(new CustomEvent(LIKES_EVENT, { detail: next }));
-  return next;
 }
 
-/** Calls onChange when the count changes on this page or in another tab. Returns the unsubscribe function. */
-export function subscribeLikes(onChange: () => void): () => void {
+/** Calls onChange with the new count when another tab saves it. Returns the unsubscribe function. */
+export function watchOtherTabs(onChange: (count: number) => void): () => void {
   const onStorage = (event: Event) => {
     const { key } = event as StorageEvent;
-    if (key === LIKES_KEY || key === null) onChange(); // null: another tab cleared storage
+    if (key === LIKES_KEY || key === null) onChange(loadLikes()); // null: another tab cleared storage
   };
-  window.addEventListener(LIKES_EVENT, onChange);
   window.addEventListener("storage", onStorage);
-  return () => {
-    window.removeEventListener(LIKES_EVENT, onChange);
-    window.removeEventListener("storage", onStorage);
-  };
+  return () => window.removeEventListener("storage", onStorage);
 }
