@@ -307,3 +307,45 @@ $ pnpm why follow-redirects -r → follow-redirects@1.16.2 ← http-proxy@1.18.1
 $ pnpm audit --prod             → one advisory left: picomatch <=4.0.7 (GHSA-fc5q-39xc-vjpf), no patched version yet
 $ pnpm test / typecheck / build → 5 passed / 3 packages successful / both apps built
 ```
+
+## Shared likes across zones (2026-11-18)
+
+A Like pressed in a blog component updates a count in the shell's header. `remote-components` shares only `react`, `react-dom`
+and `next/*` between host and remote by default, so each zone bundles its own copy of `@mfe-lite/ui`; a module variable or a
+React context there would exist twice. The copies agree through the browser instead: `@mfe-lite/ui/likes` keeps the count in
+`localStorage` under `mfe-lite:likes`, fires a `mfe-lite:likes` event on `window` after each change, and listens to the browser's
+`storage` event for other tabs. The header (both zones) shows `♥ N`; the blog's Reactions card and a new Like on each post write it.
+
+```
+$ pnpm test      → 11 passed (routing contract ×2, shell proxy matcher ×3, shared likes ×6: two separately loaded copies
+                   of the module see the same count, other tabs, broken stored values, storage blocked)
+$ pnpm typecheck → 3 packages successful
+$ pnpm build     → same routes as before
+```
+
+Commit `31caaea` touched both apps and `packages/ui`, so both projects built (Production and Preview each, all READY, 22–30 s).
+On https://mfe-lite-shell.vercel.app:
+
+```
+/, /horizontal, /does-not-exist, /lab.html      x-mfe-zone: shell   (200, 200, 404, 200)
+/components/*, /blog, /blog/hello-world, /docs  x-mfe-zone: blog    (all 200)
+
+/horizontal HTML: header data-likes="0", both remotes server-rendered, Reactions "Like · 0", no fallback, build 31caaea ×3
+/blog/hello-world HTML: header data-likes="0", one Like button
+```
+
+In a browser, starting from an empty `localStorage`:
+
+| # | Step | Result |
+|---|---|---|
+| 1 | `/horizontal`: three clicks on the blog's Like (inside an open Shadow DOM) | the shell's header shows `♥ 3` at once |
+| 2 | reload `/horizontal` | `♥ 3`, `Like · 3` |
+| 3 | "Hello, world" link → `/blog/hello-world` (blog zone), two clicks on Like | `♥ 5`, `Like · 5` |
+| 4 | header Home → `/` (shell zone) | `♥ 5` |
+| 5 | a second tab on `/docs`, one click on Like in the first tab | the second tab shows `♥ 6` without reloading |
+| 6 | https://mfe-lite-blog.vercel.app/blog/hello-world | `♥ 0`: another origin, so another `localStorage` |
+
+No console errors on `/horizontal` or `/docs`. Not checked on production: a blog outage. Locally, with the blog stopped,
+`/horizontal` still showed the stored count in the header and both slots showed their fallback.
+
+The count is per browser and per origin. A count shared by every visitor would need server-side storage.
