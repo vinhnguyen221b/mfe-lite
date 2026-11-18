@@ -143,7 +143,7 @@ Blog assets load under `/vc-ap-<hash>/_next/...`, the hashed prefix `withMicrofr
 ## Learn more
 
 - [docs/architecture.md](docs/architecture.md): request flow, the horizontal page, shared state, the two projects and their settings, local vs production.
-- [apps/shell/public/lab.html](apps/shell/public/lab.html), live at https://mfe-lite-shell.vercel.app/lab.html: a self-contained interactive lab served by the shell as a static file: overview, animated request flow with a path picker, the horizontal page step by step with the shared like count, the recorded checks, and an eleven-rule cheat sheet for `microfrontends.json`, the proxy matcher, cross-zone links, embedded components and shared state.
+- [apps/shell/public/lab.html](apps/shell/public/lab.html), live at https://mfe-lite-shell.vercel.app/lab.html: a self-contained interactive lab served by the shell as a static file. It explains how the vertical and the horizontal split are set up and how they work: a vertical/horizontal explorer, a request router you can type any path into, the asset prefix, cross-zone navigation, `/horizontal` assembled step by step (with the blog down and an X-ray view), the shared like count, a blog-only deploy, and a map of every file involved.
 
 ## License
 

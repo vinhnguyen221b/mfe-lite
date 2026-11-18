@@ -77,7 +77,7 @@ export const DOCS: Doc[] = [
         p: "The routing tests check both: every sample path lands in the expected app, and the shell's matcher skips every path the blog owns.",
       },
     ],
-    seeAlso: [{ href: "/lab.html#request", label: "Lab: a request, step by step" }],
+    seeAlso: [{ href: "/lab.html#vertical", label: "Lab: vertical, a request step by step" }],
   },
   {
     slug: "links-and-assets",
@@ -110,7 +110,7 @@ export const DOCS: Doc[] = [
         p: "This is also why the shell's proxy matcher must skip `vc-ap-`: otherwise the shell would intercept the blog's files.",
       },
     ],
-    seeAlso: [{ href: "/lab.html#cheatsheet", label: "Lab: cheat sheet" }],
+    seeAlso: [{ href: "/lab.html#setup", label: "Lab: where each piece lives" }],
   },
   {
     slug: "horizontal",
@@ -245,6 +245,6 @@ export const DOCS: Doc[] = [
         ],
       },
     ],
-    seeAlso: [{ href: "/lab.html#checks", label: "Lab: the recorded checks" }],
+    seeAlso: [{ href: "/lab.html#setup", label: "Lab: try the checks yourself" }],
   },
 ];

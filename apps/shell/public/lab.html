@@ -4,11 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>MFE Lite Lab</title>
-<meta name="description" content="Interactive lab for MFE Lite: two Next.js zones behind one domain on Vercel Microfrontends (Hobby plan).">
+<meta name="description" content="Interactive lab: how MFE Lite splits one website between two Next.js apps on Vercel, by URL (vertical) and inside a page (horizontal).">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* Layout: blueprint sheet, four sheets.
-   Sticky header with tabs; each sheet = head, optional player, SVG stage on grid paper, ledger. */
+/* Four sheets: Overview, Vertical, Horizontal, Setup. Shell = green, blog = blue, everywhere. */
 :root{
   --bg:#eef2f6; --surface:#ffffff; --surface-2:#f6f8fb; --ink:#0f1b2d; --muted:#5b6779; --line:#d6dde8; --grid:#e3e8f0;
   --accent:#0b8a6e; --accent-soft:#d8f2ea; --accent-ink:#06624e;
@@ -28,23 +27,28 @@
   --shadow:0 1px 2px rgba(0,0,0,.5),0 12px 32px -18px rgba(0,0,0,.8); color-scheme:dark}
 
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.55}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
 a{color:var(--accent-ink)}
 code,.mono{font-family:var(--mono);font-size:.88em}
 code{background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:.05em .3em;overflow-wrap:anywhere}
-pre{margin:0;font-family:var(--mono);font-size:.8rem;line-height:1.5;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:.8rem 1rem;overflow-x:auto;tab-size:2}
+pre{margin:0;font-family:var(--mono);font-size:.78rem;line-height:1.55;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:.8rem 1rem;overflow-x:auto;tab-size:2}
 pre code{background:none;border:0;padding:0;font-size:inherit;overflow-wrap:normal}
-h1,h2,h3{text-wrap:balance;line-height:1.2;margin:0;letter-spacing:-.01em}
+.tok-c{color:var(--muted);font-style:italic}.tok-s{color:var(--accent-ink)}.tok-k{color:var(--info-ink);font-weight:600}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.2;margin:0;letter-spacing:-.01em}
 h1{font-size:1.25rem;font-weight:800}
-h2{font-size:1.5rem;font-weight:800}
+h2{font-size:1.6rem;font-weight:800}
 h3{font-size:1rem;font-weight:700}
 p{margin:0}
+.muted{color:var(--muted)}
 .wrap{max-width:1120px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .sprite{position:absolute;width:0;height:0;overflow:hidden}
 .ic{width:1.1em;height:1.1em;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:where(button,input,select,summary,[tabindex]):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
+/* header + tabs */
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
 header.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1.5rem;padding-block:.6rem}
 .brand{display:flex;align-items:center;gap:.65rem;min-width:0}
@@ -53,133 +57,328 @@ header.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1.5rem
 .brand small{display:block;color:var(--muted);font-size:.75rem;font-weight:600;letter-spacing:.02em}
 nav.tabs{display:flex;gap:.2rem;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none}
 nav.tabs::-webkit-scrollbar{display:none}
-nav.tabs button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-weight:700;font-size:.86rem;padding:.5rem .8rem;border-radius:999px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:.4rem}
+nav.tabs button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-weight:700;font-size:.88rem;padding:.5rem .85rem;border-radius:999px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:.4rem}
 nav.tabs button[aria-selected="true"]{background:var(--accent-soft);color:var(--accent-ink)}
-:where(button,input,select,summary):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
-main .wrap{padding-block:1.5rem 3.5rem}
+main .wrap{padding-block:1.5rem 4rem}
 section[role="tabpanel"]{display:grid;gap:1.1rem}
 section[role="tabpanel"][hidden]{display:none}
-.sheet-head{display:grid;gap:.4rem;max-width:72ch}
+.sheet-head{display:grid;gap:.45rem;max-width:74ch}
 .eyebrow{display:inline-flex;align-items:center;gap:.4rem;color:var(--accent-ink);font-weight:800;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase}
-.lead{color:var(--muted);font-size:1rem}
+.lead{color:var(--muted);font-size:1.02rem}
+.subhead{display:grid;gap:.3rem;margin-top:1.4rem;max-width:76ch;scroll-margin-top:84px}
+.subhead h3{font-size:1.2rem;font-weight:800;display:flex;align-items:center;gap:.55rem}
+.subhead h3 .k{font-family:var(--mono);font-size:.72rem;font-weight:600;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:.1rem .4rem}
+.subhead p{color:var(--muted);font-size:.93rem}
 .grid{display:grid;gap:1rem}
 .cols-3{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
-.cols-2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.cols-4{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.two{display:grid;gap:1rem;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}
+@media (max-width:860px){.two{grid-template-columns:1fr}}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.1rem;min-width:0;display:grid;gap:.5rem;align-content:start}
 .card h3{display:flex;align-items:center;gap:.5rem}
-.card ul{margin:0;padding-left:1.1rem}
-.card li{margin:.2rem 0}
 .card p,.card li{font-size:.9rem}
-.card .muted{color:var(--muted)}
+.card ul{margin:0;padding-left:1.1rem}
 .card.zone-shell{border-top:3px solid var(--accent)}
 .card.zone-blog{border-top:3px solid var(--info)}
-.kv{display:grid;grid-template-columns:auto 1fr;gap:.25rem .8rem;font-size:.86rem}
+.card.zone-group{border-top:3px solid var(--warn)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:.3rem .8rem;font-size:.87rem;margin:0}
 .kv dt{color:var(--muted);font-weight:600}
 .kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
-.fact{display:grid;grid-template-columns:auto 1fr;gap:.75rem;align-items:center}
-.fact .glyph{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink)}
-.fact .glyph .ic{width:22px;height:22px}
-.fact b{display:block;font-size:1.02rem;font-weight:800}
-.fact span{color:var(--muted);font-size:.85rem}
 
-figure{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:0;overflow:hidden;min-width:0;box-shadow:var(--shadow)}
+.btn{appearance:none;font:inherit;font-weight:700;font-size:.86rem;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:.45rem .85rem;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;white-space:nowrap}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.blue{background:var(--info);border-color:var(--info);color:#fff}
+:root[data-theme="dark"] .btn.primary,:root[data-theme="dark"] .btn.blue{color:#06121f}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.primary,:root:not([data-theme="light"]) .btn.blue{color:#06121f}}
+.btn:disabled{opacity:.45;cursor:default}
+.seg{display:inline-flex;flex-wrap:wrap;gap:.2rem;padding:.22rem;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.seg button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-weight:700;font-size:.84rem;padding:.4rem .8rem;border-radius:9px;cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.seg.blogseg button[aria-pressed="true"][data-v="down"]{background:var(--danger);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:.4rem}
+.chip{appearance:none;font:inherit;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:.28rem .55rem;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer;white-space:nowrap}
+.chip:hover{border-color:var(--muted)}
+.chip.on{border-color:var(--ink);background:var(--ink);color:var(--surface)}
+.badge{display:inline-flex;align-items:center;gap:.35rem;font-family:var(--mono);font-size:.76rem;font-weight:600;padding:.2rem .55rem;border-radius:7px;white-space:nowrap}
+.badge.shell{background:var(--accent-soft);color:var(--accent-ink)} .badge.blog{background:var(--info-soft);color:var(--info-ink)} .badge.ok{background:var(--ok-soft);color:var(--ok)} .badge.warn{background:var(--warn-soft);color:var(--warn)} .badge.bad{background:var(--danger-soft);color:var(--danger)} .badge.dim{background:var(--surface-2);color:var(--muted)}
+.bar-row{display:flex;flex-wrap:wrap;gap:.6rem 1rem;align-items:center}
+.spacer{flex:1 1 auto}
+
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:.6rem .75rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:700;color:var(--muted);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+tbody th{text-transform:none;letter-spacing:0;font-size:.84rem;color:var(--ink);white-space:normal}
+tbody tr:last-child td,tbody tr:last-child th{border-bottom:0}
+.table-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.table-wrap table{min-width:620px}
+.table-wrap table.compare{min-width:0}
+@media (max-width:640px){.compare th,.compare td{padding:.5rem;font-size:.8rem}.compare thead th{font-size:.64rem;white-space:normal}}
+td.v{border-left:3px solid var(--accent)} td.h{border-left:3px solid var(--info)}
+
+/* figure / svg */
+figure{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;min-width:0;box-shadow:var(--shadow)}
 figure .frame{overflow-x:auto;background:
   linear-gradient(var(--grid) 1px,transparent 1px) 0 0/24px 24px,
   linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/24px 24px, var(--surface-2)}
-figure svg{display:block;max-width:100%;height:auto;min-width:720px}
-figure svg.small{min-width:600px}
-figcaption{color:var(--muted);font-size:.84rem;padding:.75rem 1rem;border-top:1px solid var(--line)}
-
-.player{display:flex;flex-wrap:wrap;gap:.6rem 1rem;align-items:center;padding:.7rem 1rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
-.player label{display:inline-flex;align-items:center;gap:.4rem;font-size:.86rem;font-weight:600}
-select{font:inherit;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:.35rem .5rem;font-family:var(--mono);font-size:.84rem}
-.btn{appearance:none;font:inherit;font-weight:700;font-size:.86rem;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:.45rem .85rem;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn:disabled{opacity:.45;cursor:default}
-.spacer{flex:1 1 auto}
-
-.ledger{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:.4rem 0;min-height:9rem;max-height:22rem;overflow:auto}
-.ledger .row{display:grid;grid-template-columns:1.6rem 1fr;gap:.6rem;padding:.5rem 1rem;border-top:1px solid var(--line);font-size:.86rem;align-items:start}
-.ledger .row:first-child{border-top:0}
-.ledger .row .ic{width:1.1rem;height:1.1rem;margin-top:.15rem}
-.ledger .row.ok .ic{color:var(--ok)} .ledger .row.warn .ic{color:var(--warn)} .ledger .row.info .ic{color:var(--info)} .ledger .row.shell .ic{color:var(--accent)} .ledger .row.blog .ic{color:var(--info)}
-.ledger .row b{font-family:var(--mono);font-weight:600;font-size:.78rem;color:var(--muted);display:block;overflow-wrap:anywhere}
-.ledger .row div{min-width:0}
-.ledger .empty{padding:1rem;color:var(--muted);font-size:.9rem}
-.verdict{display:flex;flex-wrap:wrap;gap:.6rem .9rem;align-items:center;padding:.8rem 1rem;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);font-size:.9rem}
-.verdict .caption{color:var(--muted);min-width:0;overflow-wrap:anywhere}
-.badge{display:inline-flex;align-items:center;gap:.35rem;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:.25rem .6rem;border-radius:8px;white-space:nowrap}
-.badge.shell{background:var(--accent-soft);color:var(--accent-ink)} .badge.blog{background:var(--info-soft);color:var(--info-ink)} .badge.ok{background:var(--ok-soft);color:var(--ok)} .badge.warn{background:var(--warn-soft);color:var(--warn)} .badge.dim{background:var(--surface-2);color:var(--muted)}
-table{border-collapse:collapse;width:100%;font-size:.86rem}
-th,td{text-align:left;padding:.5rem .6rem;border-bottom:1px solid var(--line);vertical-align:top}
-th{font-weight:700;color:var(--muted);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
-td .mono{font-size:.8rem}
-tbody tr:last-child td{border-bottom:0}
-.table-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
-.table-wrap table{min-width:560px}
-.table-wrap caption{text-align:left;padding:.75rem .9rem .2rem;font-weight:700;font-size:.9rem}
-
-.two{display:grid;gap:1rem;grid-template-columns:minmax(0,1.4fr) minmax(280px,1fr)}
-@media (max-width:860px){.two{grid-template-columns:1fr}}
-
-.rules{counter-reset:rule;list-style:none;margin:0;padding:0;display:grid;gap:.6rem}
-.rules li{counter-increment:rule;display:grid;grid-template-columns:2.4rem 1fr;gap:.8rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:.8rem 1rem;min-width:0;font-size:.9rem}
-.rules li::before{content:counter(rule,decimal-leading-zero);font-family:var(--mono);font-weight:600;font-size:.9rem;width:2.4rem;height:2.4rem;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink)}
-.rules li div{min-width:0}
-.rules li b{display:block;font-weight:800;margin-bottom:.15rem}
-.rules li.bad::before{background:var(--danger-soft);color:var(--danger)}
-.rules li.hobby::before{background:var(--warn-soft);color:var(--warn)}
-
-/* SVG system (styled from page CSS) */
+figure .frame > svg{display:block;max-width:100%;height:auto;min-width:760px}
+figure .frame > svg.mid{min-width:660px}
+figcaption{color:var(--muted);font-size:.85rem;padding:.7rem 1rem;border-top:1px solid var(--line)}
+.fig-bar{display:flex;flex-wrap:wrap;gap:.6rem .8rem;align-items:center;padding:.7rem 1rem;border-bottom:1px solid var(--line);background:var(--surface)}
 svg text{font-family:var(--font);fill:var(--ink);font-size:12.5px;font-weight:600}
 svg text.lbl{font-size:11px;fill:var(--muted);font-weight:600}
 svg text.mono{font-family:var(--mono);font-size:11px;font-weight:600}
 svg text.title{font-size:13px;font-weight:800}
-svg .edge{stroke:var(--muted);stroke-width:1.6;fill:none;transition:stroke .25s}
+svg text.big{font-size:20px;font-weight:800}
+svg text.halo{paint-order:stroke;stroke:var(--surface-2);stroke-width:5px;stroke-linejoin:round}
+svg .edge{stroke:var(--muted);stroke-width:1.6;fill:none;transition:stroke .25s,opacity .25s}
 svg .edge.dashed{stroke-dasharray:5 4}
 svg .edge.lit{stroke:var(--accent);stroke-width:2.4}
 svg .edge.lit.blog{stroke:var(--info)}
-svg .edge.off{opacity:.3}
+svg .edge.cur{stroke-dasharray:7 6;animation:flow .7s linear infinite}
+svg .edge.off{opacity:.22}
+svg .edge.fail{stroke:var(--danger);stroke-dasharray:4 4;opacity:1}
+@keyframes flow{to{stroke-dashoffset:-26}}
 svg .glyph{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-svg .station rect{fill:var(--surface);stroke:var(--line);stroke-width:1.4;transition:stroke .25s,fill .25s}
+svg .station rect{fill:var(--surface);stroke:var(--line);stroke-width:1.4;transition:stroke .25s,fill .25s,opacity .25s}
 svg .station .glyph{color:var(--muted)}
 svg .station.shell rect{stroke:var(--accent)} svg .station.blog rect{stroke:var(--info)}
-svg .station.active rect{stroke:var(--accent);fill:var(--accent-soft);stroke-width:2}
+svg .station.active rect{stroke:var(--accent);fill:var(--accent-soft);stroke-width:2.2}
 svg .station.active .glyph{color:var(--accent-ink)}
 svg .station.active.blog rect{stroke:var(--info);fill:var(--info-soft)}
 svg .station.active.blog .glyph{color:var(--info-ink)}
-svg .station.pass rect{stroke:var(--ok)} svg .station.pass .glyph{color:var(--ok)}
-svg .station.skip rect{stroke-dasharray:4 3} svg .station.skip rect,svg .station.skip text,svg .station.skip .glyph{opacity:.5}
+svg .station.skip{opacity:.4}
+svg .station.down rect{stroke:var(--danger);fill:var(--danger-soft);stroke-dasharray:5 4}
 svg .packet{fill:var(--accent);stroke:var(--surface);stroke-width:3;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
 svg .packet.blog{fill:var(--info)}
-svg .band{fill:var(--surface);stroke:var(--line);stroke-dasharray:5 4}
-svg .band.shell{stroke:var(--accent)} svg .band.blog{stroke:var(--info)}
-svg .tag{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
 svg .panel rect.box{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
-svg .prow rect{fill:transparent;stroke:transparent;stroke-width:1.2;transition:fill .25s,stroke .25s}
-svg .prow text{font-size:10.5px}
+svg .prow rect{fill:transparent;stroke:transparent;stroke-width:1.3;transition:fill .2s,stroke .2s}
+svg .prow text{font-size:10px}
 svg .prow.hit rect{fill:var(--accent-soft);stroke:var(--accent)}
 svg .prow.hit.blog rect{fill:var(--info-soft);stroke:var(--info)}
-svg .prow.miss{opacity:.35}
-svg text.halo{paint-order:stroke;stroke:var(--surface-2);stroke-width:4px;stroke-linejoin:round}
-.hz-page{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface-2)}
-.hz-bar{padding:.4rem .7rem;border-bottom:1px solid var(--line);color:var(--muted);font-size:.75rem;background:var(--surface);overflow-wrap:anywhere}
-.hz-head{display:flex;justify-content:space-between;align-items:center;gap:.6rem;padding:.4rem .8rem;border-bottom:1px solid var(--line);border-left:3px solid var(--accent);font-size:.82rem;background:var(--surface)}
-.hz-body{padding:.8rem;display:grid;gap:.6rem;border-left:3px solid var(--accent)}
-.hz-body p{font-size:.88rem}
-.hz-slot{border:1.5px dashed var(--info);border-radius:10px;padding:.6rem .7rem;background:var(--surface);min-width:0}
-.hz-up{display:grid;gap:.3rem;font-size:.86rem;min-width:0}
-.hz-down{display:none;color:var(--muted);font-size:.86rem}
-.hz-page[data-blog="down"] .hz-up{display:none}
-.hz-page[data-blog="down"] .hz-down{display:block}
-.hz-page[data-blog="down"] .hz-slot{border-color:var(--line);border-style:solid}
-.btn[aria-pressed="false"]{background:var(--surface);border-color:var(--line);color:var(--ink)}
-.card.step{grid-template-columns:auto 1fr;gap:.8rem;align-items:start}
-.card.step .num{width:2.2rem;height:2.2rem;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink);font-family:var(--mono);font-weight:600}
-.card.step h3{margin-bottom:.25rem}
-@media (prefers-reduced-motion: reduce){*{transition:none!important}}
-@media (max-width:640px){body{font-size:14.5px}h2{font-size:1.3rem}nav.tabs{flex-basis:100%}nav.tabs button{padding:.45rem .65rem}nav.tabs button .ic{display:none}.rules li{grid-template-columns:2rem 1fr;gap:.6rem}.rules li::before{width:2rem;height:2rem;font-size:.8rem}}
+svg .prow.miss{opacity:.32}
+svg .tag rect{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+svg .xmark{stroke:var(--danger);stroke-width:3;stroke-linecap:round}
+
+/* mock browser */
+.z-shell{--zc:var(--accent);--zsoft:var(--accent-soft);--zink:var(--accent-ink)}
+.z-blog{--zc:var(--info);--zsoft:var(--info-soft);--zink:var(--info-ink)}
+.browser{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow);position:relative;min-width:0;display:flex;flex-direction:column}
+.b-bar{display:flex;align-items:center;gap:.55rem;padding:.45rem .7rem;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.dots{display:inline-flex;gap:5px;flex:none}.dots i{width:9px;height:9px;border-radius:50%;background:var(--line);display:block}
+.b-url{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:.18rem .55rem;font-family:var(--mono);font-size:.74rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.b-url .host{color:var(--muted)} .b-url b{font-weight:600;color:var(--ink)}
+.b-status{font-family:var(--mono);font-size:.7rem;font-weight:600;padding:.12rem .4rem;border-radius:6px;background:var(--surface);border:1px solid var(--line);color:var(--muted);flex:none}
+.b-status.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.b-progress{position:absolute;left:0;top:0;height:3px;width:100%;background:var(--info);transform-origin:left;transform:scaleX(0);z-index:3;opacity:0}
+.browser.loading .b-progress{opacity:1;animation:load .5s ease-in forwards}
+@keyframes load{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.b-page{position:relative;flex:1;min-height:250px;display:flex;flex-direction:column}
+.pg-head{display:flex;align-items:center;gap:.6rem;padding:.45rem .75rem;border-bottom:1px solid var(--line);font-size:.78rem;box-shadow:inset 4px 0 0 var(--zc);transition:box-shadow .3s,opacity .2s}
+.pg-head .nm{font-weight:800}
+.pg-nav{display:flex;gap:.1rem;flex:1;flex-wrap:wrap;min-width:0;color:var(--muted)}
+.pg-nav span{padding:.1rem .3rem}
+.pg-nav button{appearance:none;border:0;background:transparent;font:inherit;font-size:.78rem;font-weight:700;color:var(--muted);padding:.2rem .45rem;border-radius:6px;cursor:pointer}
+.pg-nav button:hover{color:var(--ink);background:var(--surface-2)}
+.pg-nav button[aria-current="page"]{color:var(--zink);background:var(--zsoft)}
+.who{font-family:var(--mono);font-size:.68rem;font-weight:600;padding:.1rem .42rem;border-radius:6px;background:var(--zsoft);color:var(--zink);white-space:nowrap}
+.heart{font-family:var(--mono);font-size:.72rem;font-weight:600;padding:.1rem .42rem;border-radius:6px;border:1px solid var(--line);display:inline-block}
+.pg-body{padding:.85rem;display:grid;gap:.6rem;align-content:start;flex:1;transition:opacity .2s}
+.pg-title{font-weight:800;font-size:1rem}
+.sk{height:7px;border-radius:4px;background:var(--line)}
+.w90{width:90%}.w80{width:80%}.w70{width:70%}.w60{width:60%}.w50{width:50%}.w40{width:40%}
+.pg-whole{display:grid;gap:.55rem;padding:.9rem;border-radius:10px;border:1.5px solid var(--zc);background:var(--zsoft)}
+.pg-whole .sk,.pg-part.slot .sk,.s-card .sk{background:color-mix(in srgb,var(--zc) 38%,transparent)}
+.pg-part{display:grid;gap:.45rem;padding:.7rem .8rem;border-radius:10px;border:1.5px solid var(--zc);background:var(--surface);position:relative}
+.pg-part.slot{border-style:dashed;background:var(--zsoft)}
+.pg-part > .who{justify-self:start}
+.fake-btn{justify-self:start;font-size:.78rem;font-weight:700;border:1px solid var(--zc);color:var(--zink);background:var(--surface);border-radius:8px;padding:.25rem .6rem}
+.swap{animation:swapIn .38s ease both}
+@keyframes swapIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.pop{animation:pop .45s ease}
+svg .pop{transform-box:fill-box;transform-origin:center}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.3)}100%{transform:scale(1)}}
+
+/* overview explorer */
+.explorer{display:grid;gap:1rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow)}
+.ex-grid{display:grid;gap:1.1rem;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}
+@media (max-width:820px){.ex-grid{grid-template-columns:1fr}}
+.ex-side{display:grid;gap:.7rem;align-content:start}
+.ex-side h3{font-size:1.15rem;font-weight:800}
+.ex-verdict{display:flex;gap:.55rem;align-items:flex-start;padding:.65rem .8rem;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);font-size:.9rem}
+.ex-verdict .ic{margin-top:.15rem;color:var(--muted)}
+.linkish{appearance:none;border:0;background:none;padding:0;font:inherit;color:var(--accent-ink);text-decoration:underline;cursor:pointer;font-weight:700}
+
+/* setup stepper */
+.setup{display:grid;gap:.9rem}
+.stepper{display:flex;gap:.5rem;overflow-x:auto;padding:.2rem .2rem .35rem;scrollbar-width:thin}
+.stepper button{appearance:none;font:inherit;text-align:left;display:grid;grid-template-columns:auto 1fr;gap:.55rem;align-items:center;min-width:176px;flex:1 1 0;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:.55rem .7rem;cursor:pointer}
+.stepper .n{width:1.8rem;height:1.8rem;border-radius:8px;display:grid;place-items:center;background:var(--surface-2);font-family:var(--mono);font-weight:600;font-size:.8rem;color:var(--muted)}
+.stepper b{font-size:.84rem;display:block;line-height:1.25}
+.stepper small{color:var(--muted);font-size:.7rem;font-family:var(--mono);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:20ch}
+.stepper button[aria-selected="true"]{border-color:var(--zc,var(--accent));box-shadow:0 0 0 3px var(--zsoft,var(--accent-soft))}
+.stepper button[aria-selected="true"] .n{background:var(--zc,var(--accent));color:var(--surface)}
+.setup-panel{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:1rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1rem;align-items:start}
+@media (max-width:820px){.setup-panel{grid-template-columns:1fr}}
+.setup-panel .where{font-family:var(--mono);font-size:.76rem;color:var(--muted);display:flex;align-items:center;gap:.4rem;overflow-wrap:anywhere}
+.setup-panel h4{font-size:1.05rem;font-weight:800}
+.setup-panel .txt{display:grid;gap:.5rem;align-content:start}
+.setup-panel .txt p{font-size:.92rem}
+.setup-panel .swap{min-width:0}
+
+/* request router */
+.rt-bar{display:grid;gap:.6rem;padding:.8rem 1rem;border-bottom:1px solid var(--line);background:var(--surface)}
+.rt-input{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.rt-field{display:flex;align-items:center;flex:1 1 300px;min-width:0;border:1.5px solid var(--line);border-radius:10px;background:var(--surface-2);padding:0 .2rem 0 .65rem;font-family:var(--mono);font-size:.84rem}
+.rt-field:focus-within{border-color:var(--accent)}
+.rt-field span{color:var(--muted);white-space:nowrap}
+.rt-field input{flex:1;min-width:4ch;border:0;background:transparent;color:var(--ink);font:inherit;padding:.5rem .2rem;outline:none}
+.rt-preview{font-family:var(--mono);font-size:.78rem;font-weight:600;padding:.25rem .55rem;border-radius:8px;white-space:nowrap}
+.hops{list-style:none;margin:0;padding:0;display:grid;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.hops li{display:grid;grid-template-columns:2rem 1fr;gap:.7rem;padding:.6rem 1rem;border-top:1px solid var(--line);font-size:.88rem;align-items:start;transition:background .25s,opacity .25s}
+.hops li:first-child{border-top:0}
+.hops li .n{width:1.7rem;height:1.7rem;border-radius:8px;display:grid;place-items:center;font-family:var(--mono);font-weight:600;font-size:.78rem;background:var(--surface-2);color:var(--muted)}
+.hops li b{display:block}
+.hops li span{color:var(--muted)}
+.hops li.wait{opacity:.45}
+.hops li.cur{background:var(--surface-2)}
+.hops li.cur .n,.hops li.done .n{background:var(--accent);color:var(--surface)}
+.hops li.blog.cur .n,.hops li.blog.done .n{background:var(--info)}
+.hops li.na{display:none}
+
+/* prefix demo */
+.prefix{display:grid;gap:.9rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1rem}
+.pf-flow{display:grid;grid-template-columns:minmax(0,1.3fr) auto minmax(0,1fr) auto minmax(0,1fr);gap:.6rem;align-items:center}
+@media (max-width:760px){.pf-flow{grid-template-columns:1fr}.pf-flow .arrow{transform:rotate(90deg);justify-self:center}}
+.pf-box{border:1.5px solid var(--line);border-radius:10px;padding:.6rem .7rem;display:grid;gap:.25rem;min-width:0;background:var(--surface-2);transition:border-color .3s,background .3s}
+.pf-box small{color:var(--muted);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.pf-box code{background:none;border:0;padding:0;font-size:.8rem;overflow-wrap:anywhere}
+.pf-box.good{border-color:var(--info);background:var(--info-soft)}
+.pf-box.bad{border-color:var(--danger);background:var(--danger-soft)}
+.pf-box.shell{border-color:var(--accent);background:var(--accent-soft)}
+.arrow{color:var(--muted);font-weight:800;font-size:1.2rem}
+
+/* nav sim */
+.navsim{display:grid;gap:1rem;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);align-items:start}
+@media (max-width:820px){.navsim{grid-template-columns:1fr}}
+.navsim .b-page{min-height:210px}
+.browser.reload .b-page > *{opacity:.06}
+.nv-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.6rem .7rem;display:grid;gap:.1rem;min-width:0}
+.stat b{font-size:1.35rem;font-weight:800;line-height:1.1;display:inline-block}
+.stat span{color:var(--muted);font-size:.74rem;font-weight:600}
+.nv-msg{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:12px;padding:.75rem .9rem;font-size:.9rem;display:grid;gap:.3rem}
+.nv-msg.soft{border-left-color:var(--accent)} .nv-msg.hard{border-left-color:var(--info)}
+.nv-msg b{font-size:.95rem}
+
+/* horizontal assembly */
+.asm-grid{display:grid;gap:1rem;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start}
+@media (max-width:860px){.asm-grid{grid-template-columns:1fr}}
+.as-where{font-family:var(--mono);font-size:.68rem;font-weight:600;color:var(--muted);padding:.3rem .75rem;border-bottom:1px dashed var(--line);background:var(--surface);display:flex;gap:.4rem;align-items:center}
+.as-where i{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block}
+.as-where.server i{background:var(--accent)} .as-where.client i{background:var(--info)}
+.as-blank{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:.86rem;background:var(--surface);z-index:2;text-align:center;padding:1rem}
+.spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite;margin:0 auto .5rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.as-slot{border-radius:10px;min-height:64px;position:relative}
+.as-slot > div{display:none}
+.as-slot[data-state="loading"] .s-loading,.as-slot[data-state="fetching"] .s-loading,.as-slot[data-state="error"] .s-loading{display:grid}
+.as-slot[data-state="filled"] .s-card{display:grid}
+.as-slot[data-state="fallback"] .s-fallback{display:block}
+.s-loading{gap:.35rem;padding:.7rem .8rem;border:1.5px dashed var(--line);border-radius:10px;color:var(--muted);font-size:.82rem;background:var(--surface)}
+.as-slot[data-state="fetching"] .s-loading{border-color:var(--info);animation:breathe 1s ease-in-out infinite}
+.as-slot[data-state="error"] .s-loading{border-color:var(--danger)}
+.s-loading .tagline{font-family:var(--mono);font-size:.68rem;font-weight:600}
+.as-slot[data-state="fetching"] .tagline{color:var(--info-ink)}
+.as-slot[data-state="error"] .tagline{color:var(--danger)}
+@keyframes breathe{50%{background:var(--info-soft)}}
+.s-card{gap:.4rem;padding:.7rem .8rem;border:1.5px dashed var(--info);border-radius:10px;background:var(--info-soft)}
+.s-card .row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.s-card b{font-size:.88rem}
+.s-card .links{font-size:.8rem;color:var(--info-ink);text-decoration:underline}
+.s-fallback{padding:.7rem .8rem;border:1.5px solid var(--line);border-radius:10px;font-size:.82rem;color:var(--muted);background:var(--surface-2)}
+.like{appearance:none;font:inherit;font-size:.8rem;font-weight:700;border:1.5px solid var(--info);color:var(--info-ink);background:var(--surface);border-radius:8px;padding:.28rem .65rem;cursor:pointer;transition:box-shadow .3s,opacity .3s}
+.like.inert{opacity:.55;border-style:dashed;cursor:not-allowed}
+.like.live{box-shadow:0 0 0 4px var(--info-soft),0 0 18px -2px var(--info)}
+.hint{font-size:.74rem;color:var(--warn);font-weight:600;min-height:1em}
+.as-part-shell{display:grid;gap:.4rem;padding:.6rem .75rem;border-radius:10px;border:1.5px solid var(--accent);background:var(--surface)}
+[data-xray="true"] .xr{position:relative}
+[data-xray="true"] .xr::after{content:attr(data-xr);position:absolute;right:6px;top:-9px;font-family:var(--mono);font-size:.62rem;font-weight:600;padding:.05rem .35rem;border-radius:5px;background:var(--ink);color:var(--surface);white-space:nowrap;z-index:1}
+[data-xray="true"] .as-part-shell,[data-xray="true"] .pg-head{outline:2px solid var(--accent);outline-offset:-2px}
+[data-xray="true"] .s-card{outline:2px solid var(--info);outline-offset:2px}
+[data-xray="true"] .as-slot[data-state="loading"]::after,[data-xray="true"] .as-slot[data-state="fetching"]::after,[data-xray="true"] .as-slot[data-state="error"]::after{content:"shell · Suspense fallback"}
+[data-xray="true"] .as-slot[data-state="fallback"]::after{content:"shell · error boundary"}
+.as-cap{position:sticky;top:76px}
+.as-prog{display:flex;gap:4px}
+.as-prog i{flex:1;height:5px;border-radius:3px;background:var(--line);transition:background .3s}
+.as-prog i.on{background:var(--accent)} .as-prog i.on.b{background:var(--info)} .as-prog i.on.x{background:var(--danger)}
+.as-cap h3{font-size:1.1rem;font-weight:800}
+.as-cap .num{font-family:var(--mono);font-size:.74rem;color:var(--muted);font-weight:600}
+
+/* shared state */
+.ss-note{display:grid;gap:.3rem;padding:.75rem .9rem;border-radius:12px;border:1px solid var(--line);border-left:4px solid var(--accent);background:var(--surface);font-size:.9rem}
+.ss-note.bad{border-left-color:var(--danger)}
+svg .ss-btn{cursor:pointer}
+svg .ss-btn rect{fill:var(--surface);stroke:var(--info);stroke-width:1.8;transition:fill .2s}
+svg .ss-btn:hover rect{fill:var(--info-soft)}
+svg .ss-btn text{fill:var(--info-ink);font-weight:800}
+svg .ss-box rect.outer{fill:var(--surface);stroke-width:1.6}
+svg .ss-box.blog rect.outer{stroke:var(--info)} svg .ss-box.shell rect.outer{stroke:var(--accent)} svg .ss-box.browser rect.outer{stroke:var(--warn);stroke-dasharray:6 4}
+svg .ss-inner{fill:var(--surface-2);stroke:var(--line);stroke-width:1.2;transition:fill .25s,stroke .25s}
+svg .ss-inner.flash{fill:var(--warn-soft);stroke:var(--warn)}
+svg .ss-off{opacity:.25;transition:opacity .3s}
+svg .ss-on{transition:opacity .3s}
+svg .ripple{fill:none;stroke:var(--warn);stroke-width:2;opacity:0}
+svg .ripple.go{animation:ripple .6s ease-out}
+@keyframes ripple{from{opacity:.9;r:4}to{opacity:0;r:46}}
+svg .badge-big{font-size:18px;font-weight:800}
+
+/* deploy alone */
+.deploy{display:grid;gap:1rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1rem}
+.dp-grid{display:grid;gap:1rem;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)}
+@media (max-width:820px){.dp-grid{grid-template-columns:1fr}}
+.dp-projects{display:grid;gap:.6rem;align-content:start}
+.dp-card{border:1.5px solid var(--zc);border-radius:12px;padding:.65rem .8rem;display:grid;gap:.35rem;background:var(--surface);transition:opacity .3s,border-color .3s}
+.dp-card .top{display:flex;justify-content:space-between;gap:.5rem;align-items:center;flex-wrap:wrap}
+.dp-card b{font-family:var(--mono);font-size:.82rem}
+.dp-card .state{font-family:var(--mono);font-size:.72rem;font-weight:600;color:var(--muted)}
+.dp-card.skip{opacity:.5;border-style:dashed}
+.dp-card .meter{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.dp-card .meter i{display:block;height:100%;width:100%;background:var(--zc);transform-origin:left;transform:scaleX(1)}
+.dp-card.building .meter i{animation:build 1.6s linear both}
+@keyframes build{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.dp-previews{display:grid;gap:.7rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.dp-previews .b-page{min-height:150px}
+.ver{font-family:var(--mono);font-size:.68rem;font-weight:600;padding:.08rem .38rem;border-radius:5px;background:var(--surface-2);border:1px solid var(--line)}
+.ver.new{background:var(--info);color:var(--surface);border-color:var(--info)}
+.flash-new{animation:flashNew 1s ease}
+@keyframes flashNew{0%{box-shadow:0 0 0 0 var(--info)}30%{box-shadow:0 0 0 5px var(--info-soft)}100%{box-shadow:none}}
+
+/* setup sheet: file explorer */
+.files{display:grid;grid-template-columns:minmax(230px,.7fr) minmax(0,1.3fr);gap:1rem;align-items:start}
+@media (max-width:820px){.files{grid-template-columns:1fr}}
+.tree{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:.5rem;display:grid;gap:.1rem;max-height:620px;overflow:auto}
+.tree .dir{font-family:var(--mono);font-size:.72rem;font-weight:600;color:var(--muted);padding:.55rem .5rem .2rem;letter-spacing:.02em}
+.tree button{appearance:none;border:0;background:transparent;font:inherit;text-align:left;display:flex;align-items:center;gap:.45rem;padding:.38rem .5rem;border-radius:8px;cursor:pointer;color:var(--ink);min-width:0;transition:opacity .2s,background .2s}
+.tree button:hover{background:var(--surface-2)}
+.tree button[aria-selected="true"]{background:var(--ink);color:var(--surface)}
+.tree button .fn{font-family:var(--mono);font-size:.78rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tree button.dim{opacity:.28}
+.tg{display:inline-flex;gap:3px;flex:none}
+.tg i{font-style:normal;font-family:var(--mono);font-size:.6rem;font-weight:700;width:1.15rem;height:1.15rem;border-radius:4px;display:grid;place-items:center}
+.tg i.v{background:var(--accent-soft);color:var(--accent-ink)} .tg i.h{background:var(--info-soft);color:var(--info-ink)} .tg i.s{background:var(--warn-soft);color:var(--warn)}
+.file-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1rem;display:grid;gap:.7rem;min-width:0}
+.file-panel .path{font-family:var(--mono);font-size:.84rem;font-weight:600;overflow-wrap:anywhere}
+.file-panel pre{max-height:440px;overflow:auto}
+.rules{counter-reset:rule;list-style:none;margin:0;padding:0;display:grid;gap:.6rem}
+.rules li{counter-increment:rule;display:grid;grid-template-columns:2.2rem 1fr;gap:.8rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:.75rem 1rem;min-width:0;font-size:.9rem}
+.rules li::before{content:counter(rule);font-family:var(--mono);font-weight:600;font-size:.85rem;width:2.2rem;height:2.2rem;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink)}
+.rules li.h::before{background:var(--info-soft);color:var(--info-ink)} .rules li.s::before{background:var(--warn-soft);color:var(--warn)}
+.rules li div{min-width:0}
+.rules li b{display:block;font-weight:800;margin-bottom:.1rem}
+
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:640px){body{font-size:14.5px}h2{font-size:1.35rem}nav.tabs{flex-basis:100%}nav.tabs button{padding:.45rem .65rem}nav.tabs button .ic{display:none}.nv-stats .stat b{font-size:1.1rem}.as-cap{position:static}}
 </style>
 </head>
 <body>
@@ -200,24 +399,24 @@ svg text.halo{paint-order:stroke;stroke:var(--surface-2);stroke-width:4px;stroke
   <symbol id="i-step" viewBox="0 0 24 24"><path d="M6 5l9 7-9 7zM18 5v14"/></symbol>
   <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></symbol>
-  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 9a4 4 0 0 1 0 9H7z"/></symbol>
   <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
   <symbol id="i-terminal" viewBox="0 0 24 24"><path d="M4 17l6-5-6-5M12 19h8"/></symbol>
-  <symbol id="i-git" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="7" r="2.2"/><path d="M6 8.2v7.6M18 9.2c0 4-12 3-12 6.6"/></symbol>
   <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
   <symbol id="i-box" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></symbol>
   <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v4M12 17h.01"/></symbol>
   <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M12 9v11"/></symbol>
+  <symbol id="i-split" viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="16" rx="2"/><rect x="13" y="4" width="8" height="16" rx="2"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
 </svg>
 
 <header class="top"><div class="wrap">
-  <div class="brand"><div class="mark"><svg class="ic"><use href="#i-layers"/></svg></div><div><h1>MFE Lite Lab</h1><small>Two zones · one domain · Vercel Hobby</small></div></div>
+  <div class="brand"><div class="mark"><svg class="ic"><use href="#i-layers"/></svg></div><div><h1>MFE Lite Lab</h1><small>Vertical and horizontal microfrontends on Vercel</small></div></div>
   <nav class="tabs" role="tablist" aria-label="Sheets">
     <button role="tab" id="tab-btn-overview" data-tab="overview" aria-selected="true" aria-controls="tab-overview"><svg class="ic"><use href="#i-layers"/></svg>Overview</button>
-    <button role="tab" id="tab-btn-request" data-tab="request" aria-selected="false" aria-controls="tab-request"><svg class="ic"><use href="#i-route"/></svg>Request</button>
+    <button role="tab" id="tab-btn-vertical" data-tab="vertical" aria-selected="false" aria-controls="tab-vertical"><svg class="ic"><use href="#i-split"/></svg>Vertical</button>
     <button role="tab" id="tab-btn-horizontal" data-tab="horizontal" aria-selected="false" aria-controls="tab-horizontal"><svg class="ic"><use href="#i-panel"/></svg>Horizontal</button>
-    <button role="tab" id="tab-btn-checks" data-tab="checks" aria-selected="false" aria-controls="tab-checks"><svg class="ic"><use href="#i-check"/></svg>Checks</button>
-    <button role="tab" id="tab-btn-cheatsheet" data-tab="cheatsheet" aria-selected="false" aria-controls="tab-cheatsheet"><svg class="ic"><use href="#i-list"/></svg>Cheat sheet</button>
+    <button role="tab" id="tab-btn-setup" data-tab="setup" aria-selected="false" aria-controls="tab-setup"><svg class="ic"><use href="#i-list"/></svg>Setup</button>
   </nav>
 </div></header>
 
@@ -226,54 +425,558 @@ svg text.halo{paint-order:stroke;stroke:var(--surface-2);stroke-width:4px;stroke
 <!-- ================= OVERVIEW ================= -->
 <section id="tab-overview" role="tabpanel" aria-labelledby="tab-btn-overview">
   <div class="sheet-head">
-    <span class="eyebrow"><svg class="ic"><use href="#i-layers"/></svg>Sheet 1 · Overview</span>
-    <h2>Two Next.js apps. One domain. Zero dollars.</h2>
-    <p class="lead">MFE Lite is the smallest honest demo of Vercel Microfrontends. A <strong>shell</strong> project is the default app and a <strong>blog</strong> project is the child zone. Visitors only see <code>mfe-lite-shell.vercel.app</code>; the group <code>mfe-lite</code> decides which project answers each path. That is the <strong>vertical</strong> split. The shell's <code>/horizontal</code> page also shows the <strong>horizontal</strong> split: one page with components from both projects.</p>
+    <span class="eyebrow"><svg class="ic"><use href="#i-layers"/></svg>1 · Overview</span>
+    <h2>Two ways to split one website.</h2>
+    <p class="lead">MFE Lite is two Next.js apps, a <strong>shell</strong> and a <strong>blog</strong>, deployed as two Vercel projects behind one domain, <code>mfe-lite-shell.vercel.app</code>. They share the site in two ways: <strong>by URL</strong> (vertical) and <strong>inside a page</strong> (horizontal). Switch between them below.</p>
   </div>
 
+  <div class="explorer" id="ex">
+    <div class="bar-row">
+      <div class="seg" role="group" aria-label="Kind of split">
+        <button type="button" data-mode="vertical" aria-pressed="true">Vertical · split by URL</button>
+        <button type="button" data-mode="horizontal" aria-pressed="false">Horizontal · split inside a page</button>
+      </div>
+      <span class="spacer"></span>
+      <span class="badge shell">shell</span><span class="badge blog">blog</span>
+    </div>
+    <div class="ex-grid">
+      <div class="browser z-shell" id="ex-browser">
+        <div class="b-bar"><span class="dots"><i></i><i></i><i></i></span><span class="b-url"><span class="host">mfe-lite-shell.vercel.app</span><b id="ex-path">/</b></span></div>
+        <div class="b-page">
+          <div class="pg-head"><span class="nm">MFE Lite</span><span class="pg-nav"><span>Home</span><span>Blog</span><span>Docs</span><span>Horizontal</span></span><span class="who" id="ex-head-who">header · shell</span></div>
+          <div class="pg-body" id="ex-body"></div>
+        </div>
+      </div>
+      <div class="ex-side">
+        <div id="ex-chips-wrap" class="ex-chips-wrap">
+          <p class="muted" style="font-size:.84rem;margin-bottom:.35rem">Open a page:</p>
+          <div class="chips" id="ex-chips">
+            <button class="chip" type="button" data-p="/">/</button>
+            <button class="chip" type="button" data-p="/blog">/blog</button>
+            <button class="chip" type="button" data-p="/docs">/docs</button>
+            <button class="chip" type="button" data-p="/horizontal">/horizontal</button>
+          </div>
+        </div>
+        <h3 id="ex-title">Vertical: the URL decides</h3>
+        <p class="muted" id="ex-text"></p>
+        <div class="ex-verdict" id="ex-verdict"></div>
+        <dl class="kv" id="ex-kv"></dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="compare">
+      <thead><tr><th style="width:20%"></th><th>Vertical · split by URL</th><th>Horizontal · split inside a page</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">The unit</th><td class="v">a URL: a whole page belongs to one app</td><td class="h">a component: one page holds pieces from both apps</td></tr>
+        <tr><th scope="row">Who decides</th><td class="v">Vercel's routing, reading <code>microfrontends.json</code></td><td class="h">the shell's page, with <code>&lt;ConsumeRemoteComponent&gt;</code></td></tr>
+        <tr><th scope="row">When</th><td class="v">before any app code runs</td><td class="h">while the shell renders the page, on every request</td></tr>
+        <tr><th scope="row">In MFE Lite</th><td class="v"><code>/blog</code>, <code>/docs</code> → blog; every other path → shell</td><td class="h"><code>/horizontal</code>: the shell's page with two blog cards</td></tr>
+        <tr><th scope="row">The browser runs</th><td class="v">one app's JavaScript per page</td><td class="h">both apps' JavaScript on one page (React is shared)</td></tr>
+        <tr><th scope="row">Moving around</th><td class="v">a link into the other app loads a new page</td><td class="h">nothing to move: both are already on the page</td></tr>
+        <tr><th scope="row">If the blog is down</th><td class="v">blog pages fail; shell pages keep working</td><td class="h">the page still loads; each blog card shows a fallback</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid cols-3">
+    <div class="card zone-shell">
+      <h3><svg class="ic"><use href="#i-server"/></svg>Shell · the default app</h3>
+      <p class="muted">Vercel project <code>mfe-lite-shell</code>, folder <code>apps/shell</code>. Owns <code>/</code>, <code>/horizontal</code> and every path nobody else claims, including its 404 page. Holds the routing table.</p>
+    </div>
+    <div class="card zone-blog">
+      <h3><svg class="ic"><use href="#i-file"/></svg>Blog · the child app</h3>
+      <p class="muted">Vercel project <code>mfe-lite-blog</code>, folder <code>apps/blog</code>. Owns <code>/blog</code>, <code>/docs</code> and <code>/components</code>, plus everything under them. Builds and deploys on its own.</p>
+    </div>
+    <div class="card zone-group">
+      <h3><svg class="ic"><use href="#i-globe"/></svg>Group · one domain</h3>
+      <p class="muted">The Vercel microfrontends group <code>mfe-lite</code> puts both projects behind the shell's domain. Visitors only ever see <code>mfe-lite-shell.vercel.app</code>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= VERTICAL ================= -->
+<section id="tab-vertical" role="tabpanel" aria-labelledby="tab-btn-vertical" hidden>
+  <div class="sheet-head">
+    <span class="eyebrow"><svg class="ic"><use href="#i-split"/></svg>2 · Vertical · split by URL</span>
+    <h2>Every URL belongs to exactly one app.</h2>
+    <p class="lead">Vercel reads one routing table and sends each request to the project that owns its path, before any app code runs. Neither app ever forwards a request to the other.</p>
+  </div>
+
+  <div class="subhead"><h3><span class="k">A</span>How it's set up</h3><p>Five pieces, in the order you would add them. Pick one to see the code.</p></div>
+  <div class="setup z-shell" id="vs"></div>
+
+  <div class="subhead"><h3><span class="k">B</span>How a request finds its app</h3><p>Type any path, or pick one. The routing table lights up the rule that matches as you type; Send plays the request.</p></div>
   <figure>
+    <div class="rt-bar">
+      <div class="rt-input">
+        <label class="rt-field" for="rt-in"><span>mfe-lite-shell.vercel.app</span><input id="rt-in" type="text" value="/blog/hello-world" autocomplete="off" spellcheck="false" aria-label="Path"></label>
+        <span class="rt-preview badge" id="rt-prev">→ blog</span>
+        <button class="btn primary" id="rt-send" type="button"><svg class="ic"><use href="#i-send"/></svg>Send</button>
+        <button class="btn" id="rt-step" type="button"><svg class="ic"><use href="#i-step"/></svg>Step</button>
+        <button class="btn" id="rt-reset" type="button"><svg class="ic"><use href="#i-reset"/></svg>Reset</button>
+      </div>
+      <div class="chips" id="rt-chips">
+        <button class="chip" type="button" data-p="/">/</button>
+        <button class="chip" type="button" data-p="/blog/hello-world">/blog/hello-world</button>
+        <button class="chip" type="button" data-p="/docs/routing">/docs/routing</button>
+        <button class="chip" type="button" data-p="/horizontal">/horizontal</button>
+        <button class="chip" type="button" data-p="/components/reactions">/components/reactions</button>
+        <button class="chip" type="button" data-p="/blogroll">/blogroll</button>
+        <button class="chip" type="button" data-p="/blog/no-such-post">/blog/no-such-post</button>
+        <button class="chip" type="button" data-p="/vc-ap-5d190e/_next/static/chunks/page.js">/vc-ap-5d190e/…/page.js</button>
+      </div>
+    </div>
     <div class="frame">
-    <svg class="small" viewBox="0 0 760 268" role="img" aria-label="One domain in front of two projects: the blog owns /blog, /docs and /components and everything under them; the shell owns /, /horizontal and every path nobody claims. Vercel decides before any code runs.">
-      <!-- domain band -->
-      <rect x="40" y="18" width="680" height="46" rx="12" class="band"/>
-      <g transform="translate(62 41)" color="var(--muted)"><svg class="glyph" width="20" height="20" viewBox="0 0 24 24" x="-10" y="-10"><use href="#i-globe"/></svg></g>
-      <text x="86" y="37" class="title">https://mfe-lite-shell.vercel.app</text>
-      <text x="86" y="54" class="lbl">one production domain · microfrontends group "mfe-lite" (Hobby: 1 group, 2 projects)</text>
-      <!-- edges -->
-      <path d="M220 64v36" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
-      <path d="M540 64v36" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
-      <text x="212" y="88" class="lbl" text-anchor="end">everything else</text>
-      <text x="548" y="88" class="lbl">/blog · /docs · /components</text>
-      <!-- shell project -->
-      <g class="station shell"><rect x="40" y="104" width="330" height="142" rx="14"/>
-        <g transform="translate(66 128)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-server"/></svg></g>
-        <text x="86" y="124" class="title">mfe-lite-shell · default app</text>
-        <text x="86" y="141" class="lbl">apps/shell · @mfe-lite/shell · local :3000</text>
-        <text x="60" y="168" class="mono">/ · /horizontal · every unclaimed path</text>
-        <text x="60" y="190" class="lbl">owns microfrontends.json</text>
-        <text x="60" y="206" class="lbl">assets /_next/ (no prefix)</text>
-        <text x="60" y="222" class="lbl">proxy.ts only stamps x-mfe-zone: shell</text>
+    <svg id="rt-svg" viewBox="0 0 960 312" role="img" aria-label="A request goes from the browser to the one domain, then to Vercel routing, which compares the path with the routing table and sends it to the shell or the blog.">
+      <path id="rt-e1" d="M136 80H164" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
+      <path id="rt-e2" d="M342 80H374" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
+      <path id="rt-e3" d="M624 80H674" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
+      <path id="rt-e4" d="M624 100C656 100 644 232 674 232" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
+      <text x="649" y="72" class="lbl" text-anchor="middle">no match</text>
+      <text x="660" y="176" class="lbl halo">match</text>
+      <g class="station" data-st="browser"><rect x="16" y="48" width="120" height="64" rx="12"/>
+        <g transform="translate(38 80)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-user"/></svg></g>
+        <text x="56" y="77" class="title">Browser</text><text x="56" y="94" class="lbl">GET path</text></g>
+      <g class="station" data-st="domain"><rect x="166" y="48" width="176" height="64" rx="12"/>
+        <g transform="translate(188 80)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-globe"/></svg></g>
+        <text x="206" y="72" class="title">One domain</text><text x="206" y="88" class="mono">mfe-lite-shell</text><text x="206" y="102" class="mono">.vercel.app</text></g>
+      <g class="station" data-st="routing"><rect x="376" y="48" width="248" height="64" rx="12"/>
+        <g transform="translate(398 80)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-route"/></svg></g>
+        <text x="418" y="72" class="title">Vercel routing</text><text x="418" y="88" class="lbl">group mfe-lite</text><text x="418" y="102" class="lbl">compares the path, runs no app code</text></g>
+      <g class="station shell" data-st="shell"><rect x="676" y="48" width="268" height="64" rx="12"/>
+        <g transform="translate(698 80)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-server"/></svg></g>
+        <text x="718" y="72" class="title">Shell · default app</text><text x="718" y="88" class="lbl">/, /horizontal, its 404</text><text x="718" y="102" class="lbl">every path nobody claims</text></g>
+      <g class="station blog" data-st="blog"><rect x="676" y="200" width="268" height="64" rx="12"/>
+        <g transform="translate(698 232)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-file"/></svg></g>
+        <text x="718" y="224" class="title">Blog · child app</text><text x="718" y="240" class="lbl">/blog/*, /docs/*, /components/*</text><text x="718" y="254" class="lbl">and its files under /vc-ap-5d190e/</text></g>
+      <g class="panel" id="rt-table"><rect x="368" y="128" width="264" height="176" rx="10" class="box"/>
+        <text x="380" y="146" class="lbl">routing table · microfrontends.json</text>
+        <g class="prow blog" data-row="blog"><rect x="376" y="154" width="248" height="24" rx="6"/><text x="384" y="170" class="mono">/blog · /blog/:path*</text><text x="616" y="170" class="mono" text-anchor="end" style="fill:var(--info-ink)">blog</text></g>
+        <g class="prow blog" data-row="docs"><rect x="376" y="182" width="248" height="24" rx="6"/><text x="384" y="198" class="mono">/docs · /docs/:path*</text><text x="616" y="198" class="mono" text-anchor="end" style="fill:var(--info-ink)">blog</text></g>
+        <g class="prow blog" data-row="components"><rect x="376" y="210" width="248" height="24" rx="6"/><text x="384" y="226" class="mono">/components · /components/:path*</text><text x="616" y="226" class="mono" text-anchor="end" style="fill:var(--info-ink)">blog</text></g>
+        <g class="prow blog" data-row="assets"><rect x="376" y="238" width="248" height="24" rx="6"/><text x="384" y="254" class="mono">/vc-ap-5d190e/… (its files)</text><text x="616" y="254" class="mono" text-anchor="end" style="fill:var(--info-ink)">blog</text></g>
+        <g class="prow" data-row="else"><rect x="376" y="266" width="248" height="24" rx="6"/><text x="384" y="282" class="mono">anything else</text><text x="616" y="282" class="mono" text-anchor="end" style="fill:var(--accent-ink)">shell</text></g>
       </g>
-      <!-- blog project -->
-      <g class="station blog"><rect x="390" y="104" width="330" height="142" rx="14"/>
-        <g transform="translate(416 128)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-file"/></svg></g>
-        <text x="436" y="124" class="title">mfe-lite-blog · child zone</text>
-        <text x="436" y="141" class="lbl">apps/blog · @mfe-lite/blog · local :3001</text>
-        <text x="410" y="168" class="mono">/blog · /docs · /components (+ /:path*)</text>
-        <text x="410" y="190" class="lbl">routed here by the group before any code runs</text>
-        <text x="410" y="206" class="lbl">assets /vc-ap-5d190e/_next/</text>
-        <text x="410" y="222" class="lbl">proxy.ts only stamps x-mfe-zone: blog</text>
-      </g>
+      <g class="tag" id="rt-tag" opacity="0"><rect x="16" y="150" width="326" height="76" rx="10"/>
+        <text x="30" y="171" class="lbl" id="rt-tag-k">response</text>
+        <text x="30" y="192" class="mono" id="rt-tag-a">200</text>
+        <text x="30" y="212" class="lbl" id="rt-tag-b"></text></g>
+      <text x="16" y="136" class="mono halo" id="rt-float" opacity="0"></text>
+      <circle id="rt-packet" class="packet" cx="150" cy="80" r="7" opacity="0"/>
     </svg>
     </div>
-    <figcaption>Ownership is decided by Vercel before any code runs: <code>/blog</code>, <code>/docs</code> and <code>/components</code> go to the blog project, everything else to the shell. Neither app's code makes a routing decision.</figcaption>
   </figure>
+  <ol class="hops" id="rt-hops" aria-live="polite">
+    <li data-h="1"><span class="n">1</span><div><b>The browser asks the one domain</b><span></span></div></li>
+    <li data-h="2"><span class="n">2</span><div><b>Vercel routing reads the table</b><span></span></div></li>
+    <li data-h="3"><span class="n">3</span><div><b>One rule matches, or none does</b><span></span></div></li>
+    <li data-h="4"><span class="n">4</span><div><b>That app answers</b><span></span></div></li>
+    <li data-h="5"><span class="n">5</span><div><b>The page's files follow the same rules</b><span></span></div></li>
+  </ol>
 
+  <div class="subhead"><h3><span class="k">C</span>Why the blog's files need a prefix</h3><p>Both apps build their CSS and JavaScript under <code>/_next/static/</code>. On one domain, routing must be able to tell whose file a URL is.</p></div>
+  <div class="prefix" id="pf">
+    <div class="bar-row">
+      <div class="seg" role="group" aria-label="Asset prefix">
+        <button type="button" data-v="off" aria-pressed="false">Without a prefix</button>
+        <button type="button" data-v="on" aria-pressed="true">With withMicrofrontends</button>
+      </div>
+    </div>
+    <div class="pf-flow">
+      <div class="pf-box" id="pf-a"><small>A blog page asks for</small><code id="pf-url"></code></div>
+      <span class="arrow" aria-hidden="true">→</span>
+      <div class="pf-box" id="pf-b"><small>Routing</small><span id="pf-rule"></span></div>
+      <span class="arrow" aria-hidden="true">→</span>
+      <div class="pf-box" id="pf-c"><small>Result</small><span id="pf-res"></span></div>
+    </div>
+    <p class="muted" id="pf-text" style="font-size:.9rem"></p>
+  </div>
+
+  <div class="subhead"><h3><span class="k">D</span>Moving between the apps</h3><p>The shared header uses the microfrontends <code>Link</code>. It knows which app owns each path from the copy of the routing table baked in at build time. Click the links in the page.</p></div>
+  <div class="navsim">
+    <div class="browser z-shell" id="nv-browser">
+      <div class="b-progress"></div>
+      <div class="b-bar"><span class="dots"><i></i><i></i><i></i></span><span class="b-url"><span class="host">mfe-lite-shell.vercel.app</span><b id="nv-path">/</b></span></div>
+      <div class="b-page">
+        <div class="pg-head"><span class="nm">MFE Lite</span><span class="pg-nav" id="nv-nav">
+          <button type="button" data-p="/" aria-current="page">Home</button><button type="button" data-p="/blog">Blog</button><button type="button" data-p="/docs">Docs</button><button type="button" data-p="/horizontal">Horizontal</button>
+        </span><span class="who" id="nv-who">shell</span></div>
+        <div class="pg-body" id="nv-body"></div>
+      </div>
+    </div>
+    <div class="grid" style="gap:.7rem">
+      <div class="nv-stats">
+        <div class="stat"><b id="nv-hard">1</b><span>full page loads</span></div>
+        <div class="stat"><b id="nv-soft">0</b><span>client-side navigations</span></div>
+        <div class="stat"><b id="nv-app">shell</b><span>app running in the tab</span></div>
+      </div>
+      <div class="nv-msg" id="nv-msg"><b>Start on the shell's home page.</b><span class="muted">Try Horizontal (same app), then Blog (the other app), then Docs.</span></div>
+      <button class="btn" id="nv-reset" type="button" style="justify-self:start"><svg class="ic"><use href="#i-reset"/></svg>Reset</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HORIZONTAL ================= -->
+<section id="tab-horizontal" role="tabpanel" aria-labelledby="tab-btn-horizontal" hidden>
+  <div class="sheet-head">
+    <span class="eyebrow"><svg class="ic"><use href="#i-panel"/></svg>3 · Horizontal · split inside a page</span>
+    <h2>One page, pieces from two apps.</h2>
+    <p class="lead">By the routing table, <a href="https://mfe-lite-shell.vercel.app/horizontal"><code>/horizontal</code></a> is the shell's page. But two of its cards are built and deployed by the blog: the shell's server fetches them from the blog while it renders, on every request, and sends one page.</p>
+  </div>
+
+  <div class="subhead"><h3><span class="k">A</span>How it's set up</h3><p>The blog exposes, the routing table connects, the shell consumes. Pick a piece to see the code.</p></div>
+  <div class="setup z-blog" id="hs"></div>
+
+  <div class="subhead"><h3><span class="k">B</span>Watch the page come together</h3><p>Play the request for <code>/horizontal</code> step by step. Turn the blog off to see a failure, and X-ray to see whose HTML is whose.</p></div>
+  <figure>
+    <div class="frame">
+    <svg id="as-svg" viewBox="0 0 900 372" role="img" aria-label="Sequence for /horizontal: the browser asks; routing sends it to the shell; the shell renders its part and fetches /components through the same routing; routing sends those to the blog, which returns the component HTML; the shell returns one page; the browser loads the blog's JavaScript from the vc-ap prefix.">
+      <g class="station"><rect x="20" y="12" width="140" height="44" rx="10"/><text x="90" y="39" class="title" text-anchor="middle">Browser</text></g>
+      <g class="station"><rect x="260" y="12" width="140" height="44" rx="10"/><text x="330" y="32" class="title" text-anchor="middle">Vercel routing</text><text x="330" y="48" class="lbl" text-anchor="middle">group mfe-lite</text></g>
+      <g class="station shell"><rect x="500" y="12" width="140" height="44" rx="10"/><text x="570" y="32" class="title" text-anchor="middle">Shell</text><text x="570" y="48" class="lbl" text-anchor="middle">server, per request</text></g>
+      <g class="station blog" id="as-blog-st"><rect x="740" y="12" width="140" height="44" rx="10"/><text x="810" y="32" class="title" text-anchor="middle">Blog</text><text x="810" y="48" class="lbl" text-anchor="middle" id="as-blog-sub">/components/*</text></g>
+      <path d="M90 56V366M330 56V366M570 56V366M810 56V366" stroke="var(--line)" stroke-width="1.4" stroke-dasharray="4 4" fill="none"/>
+      <path id="as-e1" d="M94 100H324" class="edge off" marker-end="url(#arr)" color="var(--muted)"/>
+      <text x="210" y="92" class="mono halo" text-anchor="middle">1 · GET /horizontal</text>
+      <path id="as-e2" d="M336 132H564" class="edge off" marker-end="url(#arr)" color="var(--muted)"/>
+      <text x="450" y="124" class="lbl halo" text-anchor="middle">2 · no rule claims it → shell</text>
+      <path id="as-e3" d="M576 156h44v28h-40" class="edge off" marker-end="url(#arr)" color="var(--muted)"/>
+      <text x="630" y="174" class="lbl halo">3 · renders its own part</text>
+      <path id="as-e4" d="M564 214H336" class="edge off" marker-end="url(#arr)" color="var(--muted)"/>
+      <text x="450" y="206" class="mono halo" text-anchor="middle">4 · GET /components/… ×2</text>
+      <path id="as-e5a" d="M336 244H804" class="edge off" marker-end="url(#arr)" color="var(--muted)"/>
+      <text x="690" y="236" class="lbl halo" text-anchor="middle">5 · /components/:path* → blog</text>
+      <path id="as-e5b" d="M806 274H576" class="edge off" marker-end="url(#arr)" color="var(--muted)"/>
+      <text x="690" y="266" class="lbl halo" text-anchor="middle" id="as-e5b-t">the components' HTML</text>
+      <g id="as-x" opacity="0"><path d="M800 234l20 20M820 234l-20 20" class="xmark"/></g>
+      <path id="as-e6" d="M564 306H96" class="edge off" marker-end="url(#arr)" color="var(--muted)"/>
+      <text x="330" y="298" class="lbl halo" text-anchor="middle">6 · one HTML page</text>
+      <path id="as-e7" d="M94 344H804" class="edge dashed off" marker-end="url(#arr)" color="var(--muted)"/>
+      <text x="450" y="336" class="mono halo" text-anchor="middle">7 · GET /vc-ap-5d190e/_next/… (the blog's JS)</text>
+      <circle id="as-packet" class="packet" cx="94" cy="100" r="7" opacity="0"/>
+    </svg>
+    </div>
+  </figure>
+  <div class="asm-grid">
+    <div class="browser z-shell" id="as-browser" data-xray="false">
+      <div class="b-bar"><span class="dots"><i></i><i></i><i></i></span><span class="b-url"><span class="host">mfe-lite-shell.vercel.app</span><b>/horizontal</b></span><span class="b-status" id="as-status">idle</span></div>
+      <div class="as-where" id="as-where"><i></i><span>nothing yet</span></div>
+      <div class="b-page">
+        <div class="as-blank" id="as-blank"><div><div class="spin" id="as-spin" hidden></div><span id="as-blank-t">Press Play.</span></div></div>
+        <div class="pg-head xr" data-xr="shell · layout"><span class="nm">MFE Lite</span><span class="pg-nav"><span>Home</span><span>Blog</span><span>Docs</span></span><span class="heart" title="The shell's like badge">♥ <b id="as-heart">0</b></span></div>
+        <div class="pg-body">
+          <div class="as-part-shell xr" data-xr="shell · page"><div class="pg-title">One page, two deployments</div><div class="sk w90"></div><div class="sk w60"></div></div>
+          <div class="as-slot xr" id="as-s1" data-state="loading" data-xr="#shadow-root (open) · blog">
+            <div class="s-loading"><span>Loading Latest posts…</span><span class="tagline"></span></div>
+            <div class="s-card"><b>Latest posts</b><span class="links">Hello, world</span><span class="links">Why microfrontends</span><span class="links">All posts</span></div>
+            <div class="s-fallback">Latest posts is unavailable right now. The rest of this page is unaffected.</div>
+          </div>
+          <div class="as-slot xr" id="as-s2" data-state="loading" data-xr="#shadow-root (open) · blog">
+            <div class="s-loading"><span>Loading Reactions…</span><span class="tagline"></span></div>
+            <div class="s-card"><b>Reactions</b><div class="row"><button class="like inert" id="as-like" type="button">Like · <span id="as-like-n">0</span></button><span class="hint" id="as-hint"></span></div></div>
+            <div class="s-fallback">Reactions is unavailable right now. The rest of this page is unaffected.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card as-cap" aria-live="polite">
+      <div class="as-prog" id="as-prog"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <span class="num" id="as-num">Step 0 of 7</span>
+      <h3 id="as-title">Ready</h3>
+      <p class="muted" id="as-text"></p>
+      <div class="bar-row">
+        <button class="btn primary" id="as-play" type="button"><svg class="ic"><use href="#i-play"/></svg>Play</button>
+        <button class="btn" id="as-step" type="button"><svg class="ic"><use href="#i-step"/></svg>Step</button>
+        <button class="btn" id="as-reset" type="button"><svg class="ic"><use href="#i-reset"/></svg>Reset</button>
+      </div>
+      <div class="bar-row">
+        <span class="muted" style="font-size:.84rem;font-weight:600">Blog</span>
+        <div class="seg blogseg" role="group" aria-label="Blog project">
+          <button type="button" data-v="up" aria-pressed="true">up</button>
+          <button type="button" data-v="down" aria-pressed="false">down</button>
+        </div>
+        <button class="btn" id="as-xray" type="button" aria-pressed="false"><svg class="ic"><use href="#i-layers"/></svg>X-ray</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid cols-3">
+    <div class="card"><h3><svg class="ic"><use href="#i-box"/></svg>Styles stay apart</h3><p class="muted">Each card arrives inside <code>&lt;template shadowrootmode="open"&gt;</code> with the blog's own stylesheet. The shell's CSS does not reach in, the blog's does not leak out, and <code>document.querySelector</code> on the page does not see the card.</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-bolt"/></svg>One React</h3><p class="muted"><code>remote-components</code> shares <code>react</code>, <code>react-dom</code> and <code>next/*</code>, so the blog's button runs inside the shell's React tree. Every other package, workspace ones included, is bundled once per app.</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-link"/></svg>Same road as a visitor</h3><p class="muted">The <code>src</code> is relative. On Vercel it resolves against the production domain, so the shell's server asks <code>mfe-lite-shell.vercel.app/components/…</code> and the routing table sends it to the blog.</p></div>
+  </div>
+
+  <div class="subhead"><h3><span class="k">C</span>One Like, two apps</h3><p>The Like button is the blog's code; the ♥ in the header is the shell's. Each app bundles its own copy of <code>@mfe-lite/ui/likes</code>, so they cannot share a variable. They agree through the browser, which both reach on one origin. Press Like, then compare with a shared module variable.</p></div>
+  <figure>
+    <div class="fig-bar">
+      <button class="btn blue" id="ss-like" type="button"><svg class="ic"><use href="#i-heart"/></svg>Like</button>
+      <div class="seg" role="group" aria-label="How the two copies share the count">
+        <button type="button" data-v="contract" aria-pressed="true">Browser contract (MFE Lite)</button>
+        <button type="button" data-v="module" aria-pressed="false">A module variable</button>
+      </div>
+      <span class="spacer"></span>
+      <button class="btn" id="ss-reset" type="button"><svg class="ic"><use href="#i-reset"/></svg>Reset</button>
+    </div>
+    <div class="frame">
+    <svg id="ss-svg" class="mid" viewBox="0 0 900 330" role="img" aria-label="The blog's Like button and its copy of the likes code write to localStorage and fire a window event; the shell's copy hears the event and updates the header badge; another tab hears the browser's storage event.">
+      <g class="ss-box blog"><rect class="outer" x="20" y="20" width="270" height="180" rx="14"/>
+        <text x="36" y="44" class="title">Blog's code · in the card</text>
+        <g class="ss-btn" id="ss-btn" role="button" tabindex="0" aria-label="Like"><rect x="40" y="62" width="230" height="42" rx="10"/><text x="155" y="89" text-anchor="middle">Like · <tspan id="ss-btn-n">0</tspan></text></g>
+        <rect class="ss-inner" id="ss-bcopy" x="40" y="128" width="230" height="54" rx="10"/>
+        <text x="52" y="150" class="mono">likes.ts · blog's copy</text>
+        <text x="52" y="170" class="lbl" id="ss-bcopy-t">addLike() writes, then fires the event</text>
+      </g>
+      <g class="ss-box browser ss-on" id="ss-browser"><rect class="outer" x="320" y="20" width="260" height="180" rx="14"/>
+        <text x="336" y="44" class="title">Browser · one origin</text>
+        <rect class="ss-inner" id="ss-store" x="340" y="62" width="220" height="50" rx="10"/>
+        <text x="352" y="82" class="lbl">localStorage</text>
+        <text x="352" y="101" class="mono">mfe-lite:likes = <tspan id="ss-store-n">0</tspan></text>
+        <rect class="ss-inner" id="ss-event" x="400" y="130" width="160" height="50" rx="10"/>
+        <text x="412" y="150" class="lbl">window event</text>
+        <text x="412" y="169" class="mono">mfe-lite:likes</text>
+        <circle class="ripple" id="ss-ripple" cx="480" cy="155" r="4"/>
+      </g>
+      <g class="ss-box shell"><rect class="outer" x="610" y="20" width="270" height="180" rx="14"/>
+        <text x="626" y="44" class="title">Shell's code · the header</text>
+        <rect class="ss-inner" x="630" y="62" width="230" height="42" rx="10"/>
+        <text x="745" y="90" text-anchor="middle" class="badge-big">♥ <tspan id="ss-badge-n">0</tspan></text>
+        <rect class="ss-inner" id="ss-scopy" x="630" y="128" width="230" height="54" rx="10"/>
+        <text x="642" y="150" class="mono">likes.ts · shell's copy</text>
+        <text x="642" y="170" class="lbl" id="ss-scopy-t">useLikes() listens, re-reads</text>
+      </g>
+      <g class="ss-on" id="ss-tabg"><rect x="320" y="250" width="260" height="62" rx="12" fill="var(--surface)" stroke="var(--info)" stroke-width="1.4"/>
+        <text x="336" y="274" class="title">Another tab · /docs</text>
+        <text x="336" y="294" class="lbl">blog page, same browser</text>
+        <text x="560" y="291" text-anchor="end" class="badge-big">♥ <tspan id="ss-tab-n">0</tspan></text>
+      </g>
+      <path d="M155 104V128" class="edge" id="ss-e1" marker-end="url(#arr)" color="var(--muted)"/>
+      <path d="M270 155H305V87H338" class="edge ss-on" id="ss-e2" marker-end="url(#arr)" color="var(--muted)"/>
+      <path d="M480 112V128" class="edge ss-on" id="ss-e3" marker-end="url(#arr)" color="var(--muted)"/>
+      <path d="M560 155H628" class="edge ss-on" id="ss-e4" marker-end="url(#arr)" color="var(--muted)"/>
+      <path d="M745 128V106" class="edge ss-on" id="ss-e5" marker-end="url(#arr)" color="var(--muted)"/>
+      <path d="M360 112V248" class="edge dashed ss-on" id="ss-e6" marker-end="url(#arr)" color="var(--muted)"/>
+      <text x="368" y="230" class="lbl halo ss-on" id="ss-e6-t">browser's storage event</text>
+      <g id="ss-cut" opacity="0"><path d="M584 143l16 24M600 143l-16 24" class="xmark"/><text x="602" y="218" class="lbl halo" text-anchor="end" style="fill:var(--danger)">the shell's copy never hears it</text></g>
+      <circle id="ss-dot" class="packet blog" cx="155" cy="104" r="7" opacity="0"/>
+      <circle id="ss-dot2" class="packet blog" cx="360" cy="112" r="6" opacity="0"/>
+    </svg>
+    </div>
+  </figure>
+  <div class="ss-note" id="ss-note"></div>
+  <div class="grid cols-3">
+    <div class="card"><h3><svg class="ic"><use href="#i-globe"/></svg>Per browser, per origin</h3><p class="muted">The count lives in this browser, on <code>mfe-lite-shell.vercel.app</code>. The blog project's own domain is another origin with its own count. A count shared by every visitor would need a server.</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-server"/></svg>0 on the server</h3><p class="muted"><code>useLikes</code> is <code>useSyncExternalStore</code> with a server snapshot of 0. The real count appears once the page hydrates.</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-link"/></svg>The names are an API</h3><p class="muted"><code>mfe-lite:likes</code> is both the storage key and the event name. Both apps must agree on them, the way they agree on a URL.</p></div>
+  </div>
+
+  <div class="subhead"><h3><span class="k">D</span>Ship the blog without the shell</h3><p>Change something only in <code>apps/blog</code> and push. Watch what each project does, and what visitors see next.</p></div>
+  <div class="deploy" id="dp">
+    <div class="bar-row">
+      <button class="btn blue" id="dp-push" type="button"><svg class="ic"><use href="#i-send"/></svg>Push a change to apps/blog</button>
+      <button class="btn" id="dp-reset" type="button"><svg class="ic"><use href="#i-reset"/></svg>Reset</button>
+    </div>
+    <div class="dp-grid">
+      <div class="dp-projects">
+        <div class="dp-card z-shell" id="dp-shell"><div class="top"><b>mfe-lite-shell</b><span class="state" id="dp-shell-s">live · <span class="ver">v1</span></span></div><div class="meter"><i></i></div></div>
+        <div class="dp-card z-blog" id="dp-blog"><div class="top"><b>mfe-lite-blog</b><span class="state" id="dp-blog-s">live · <span class="ver">v1</span></span></div><div class="meter"><i></i></div></div>
+        <p class="muted" id="dp-text" style="font-size:.88rem">Both projects are live. Each builds only its own app.</p>
+      </div>
+      <div class="dp-previews">
+        <div class="browser z-blog">
+          <div class="b-bar"><span class="b-url"><span class="host">…</span><b>/blog</b></span><span class="badge dim" style="font-size:.66rem">vertical</span></div>
+          <div class="b-page"><div class="pg-body"><div class="pg-whole" id="dp-v"><div class="pg-title">Blog</div><span>blog <span class="ver" id="dp-v-ver">v1</span></span><div class="sk w80"></div><div class="sk w60"></div></div></div></div>
+        </div>
+        <div class="browser z-shell">
+          <div class="b-bar"><span class="b-url"><span class="host">…</span><b>/horizontal</b></span><span class="badge dim" style="font-size:.66rem">horizontal</span></div>
+          <div class="b-page"><div class="pg-body">
+            <div class="as-part-shell"><span>shell text <span class="ver">v1</span></span><div class="sk w70"></div></div>
+            <div class="s-card" id="dp-h" style="display:grid"><b>Latest posts</b><span>blog card <span class="ver" id="dp-h-ver">v1</span></span><span class="links" id="dp-h-new" hidden>All posts</span></div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid cols-4">
+    <div class="card"><h3><svg class="ic"><use href="#i-bolt"/></svg>More JavaScript</h3><p class="muted">The cards bring the blog's own JavaScript, about as much again as the shell's own (roughly 190 KB next to 187 KB transferred).</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-link"/></svg>Plain links in cards</h3><p class="muted">A card cannot know which app its host page belongs to, so its links are plain <code>&lt;a&gt;</code>: a full page load.</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-alert"/></svg>Production only</h3><p class="muted">Preview deployments sit behind Deployment Protection, so the shell's server cannot fetch the cards there.</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-info"/></svg>A young library</h3><p class="muted"><code>remote-components</code> is still 0.x; MFE Lite pins one exact version.</p></div>
+  </div>
+</section>
+
+<!-- ================= SETUP ================= -->
+<section id="tab-setup" role="tabpanel" aria-labelledby="tab-btn-setup" hidden>
+  <div class="sheet-head">
+    <span class="eyebrow"><svg class="ic"><use href="#i-list"/></svg>4 · Setup</span>
+    <h2>Where each piece lives.</h2>
+    <p class="lead">Every file that takes part, what it does, and which split it serves. Filter by split, then pick a file.</p>
+  </div>
+
+  <div class="bar-row">
+    <div class="seg" role="group" aria-label="Filter files" id="fx-filter">
+      <button type="button" data-f="all" aria-pressed="true">All</button>
+      <button type="button" data-f="v" aria-pressed="false">Vertical</button>
+      <button type="button" data-f="h" aria-pressed="false">Horizontal</button>
+      <button type="button" data-f="s" aria-pressed="false">Shared state</button>
+    </div>
+    <span class="spacer"></span>
+    <span class="tg" aria-hidden="true"><i class="v">V</i></span><span class="muted" style="font-size:.8rem">vertical</span>
+    <span class="tg" aria-hidden="true"><i class="h">H</i></span><span class="muted" style="font-size:.8rem">horizontal</span>
+    <span class="tg" aria-hidden="true"><i class="s">S</i></span><span class="muted" style="font-size:.8rem">shared state</span>
+  </div>
+  <div class="files">
+    <div class="tree" id="fx-tree" role="listbox" aria-label="Files"></div>
+    <div class="file-panel" id="fx-panel"></div>
+  </div>
+
+  <div class="subhead"><h3><span class="k">!</span>Rules that are easy to miss</h3></div>
+  <ol class="rules">
+    <li><div><b>List the bare path and the wildcard.</b> <code>["/blog", "/blog/:path*"]</code>. Patterns match whole segments: <code>/blogroll</code> is not <code>/blog/…</code>, so it stays with the shell.</div></li>
+    <li><div><b>The default app lists no paths.</b> It gets every path nobody claims, its own 404 included. Only children have a <code>routing</code> block.</div></li>
+    <li><div><b>Redeploy both projects once after creating the group.</b> Deployments built before the group existed ignore <code>microfrontends.json</code>. Hobby allows one group of two projects.</div></li>
+    <li><div><b>Keep the shell's proxy off the blog's URLs.</b> Its matcher skips <code>_next/</code>, <code>vc-ap-</code>, <code>/blog</code>, <code>/docs</code> and <code>/components</code>, so it only runs for the shell's own pages.</div></li>
+    <li class="h"><div><b>Expose from a path the blog owns.</b> A component lives at <code>/components/&lt;name&gt;</code>, and the routing table gives <code>/components</code> to the blog, so a relative <code>src</code> reaches it through the normal routing.</div></li>
+    <li class="h"><div><b>Render the host per request and guard every slot.</b> <code>force-dynamic</code> keeps the shell's build independent of the blog; an error boundary and <code>Suspense</code> around each slot keep a failing card from taking the page down.</div></li>
+    <li class="s"><div><b>Share state through the browser, not a module.</b> Only <code>react</code>, <code>react-dom</code> and <code>next/*</code> are shared between the apps; anything else exists once per app.</div></li>
+  </ol>
+
+  <div class="subhead" id="try"><h3><span class="k">$</span>Try it yourself</h3><p>Every response carries <code>x-mfe-zone</code>, stamped by the app that answered. Run these against the live site, or locally.</p></div>
   <div class="two">
     <div class="card">
-      <h3><svg class="ic"><use href="#i-file"/></svg>apps/shell/microfrontends.json</h3>
-      <p class="muted">The only routing table. It lives in the default app, is read by <code>withMicrofrontends</code> at build time, and defines the group's paths. The default app has no <code>routing</code>: it owns whatever nobody else claims.</p>
-<pre><code>{
+      <h3><svg class="ic"><use href="#i-terminal"/></svg>Against the live site</h3>
+<pre><code>H=https://mfe-lite-shell.vercel.app
+curl -sI $H/                      | grep x-mfe-zone   # shell
+curl -sI $H/blog/hello-world      | grep x-mfe-zone   # blog
+curl -sI $H/blogroll              | grep x-mfe-zone   # shell (404)
+curl -sI $H/components/reactions  | grep x-mfe-zone   # blog
+
+# /horizontal arrives with both blog cards in its HTML
+curl -s $H/horizontal | grep -o 'data-remote="[a-z-]*"'</code></pre>
+    </div>
+    <div class="card">
+      <h3><svg class="ic"><use href="#i-terminal"/></svg>On your machine</h3>
+<pre><code>pnpm install
+pnpm dev     # shell :3000, blog :3001, proxy :3024
+open http://localhost:3024/horizontal
+
+pnpm test    # routing table, proxy matcher, shared likes</code></pre>
+      <p class="muted">The local proxy on 3024 reads <code>microfrontends.json</code> and does what Vercel's routing does in production. Open the site through it, not through 3000 or 3001.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><svg class="ic"><use href="#i-link"/></svg>Learn more</h3>
+    <p class="muted">In the repo: <code>README.md</code>, <code>docs/architecture.md</code>. Vercel docs: <a href="https://vercel.com/docs/microfrontends">Microfrontends</a>.</p>
+  </div>
+</section>
+
+</div></main>
+
+<script>
+(function(){
+  'use strict';
+  const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
+  const sleep = ms => new Promise(r => setTimeout(r, REDUCED ? 0 : ms));
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const TOK = /(\/\/[^\n]*|\{\/\*[\s\S]*?\*\/\}|"[^"\n]*"|`[^`\n]*`)|\b(import|export|from|default|function|return|const|if|try|catch|new|class|extends|static)\b/g;
+  const hl = code => esc(code).replace(TOK, (m, str, kw) => str
+    ? `<span class="${/^(\/\/|\{\/\*)/.test(str) ? 'tok-c' : 'tok-s'}">${str}</span>`
+    : `<span class="tok-k">${kw}</span>`);
+  function pop(el){ if (!el) return; el.classList.remove('pop'); void el.getBoundingClientRect(); el.classList.add('pop'); }
+  function pressGroup(root, attr, value){ $$('button', root).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr] === value))); }
+
+  /* move an SVG circle along waypoints */
+  function travel(el, pts, ms){
+    return new Promise(res => {
+      el.setAttribute('opacity', '1');
+      const end = pts[pts.length - 1];
+      if (REDUCED || !ms || pts.length < 2){ el.setAttribute('cx', end[0]); el.setAttribute('cy', end[1]); return res(); }
+      const segs = []; let total = 0;
+      for (let i = 1; i < pts.length; i++){ const d = Math.hypot(pts[i][0] - pts[i-1][0], pts[i][1] - pts[i-1][1]); segs.push(d); total += d; }
+      const t0 = performance.now();
+      (function f(t){
+        const p = Math.min(1, (t - t0) / ms), e = p < .5 ? 2*p*p : -1 + (4 - 2*p)*p;
+        let d = e * total, i = 0;
+        while (i < segs.length - 1 && d > segs[i]){ d -= segs[i]; i++; }
+        const r = segs[i] ? Math.min(1, d / segs[i]) : 1;
+        el.setAttribute('cx', pts[i][0] + (pts[i+1][0] - pts[i][0]) * r);
+        el.setAttribute('cy', pts[i][1] + (pts[i+1][1] - pts[i][1]) * r);
+        p < 1 ? requestAnimationFrame(f) : res();
+      })(t0);
+    });
+  }
+
+  /* ---------- tabs (old links #request, #checks, #cheatsheet still land) ---------- */
+  const TABS = ['overview', 'vertical', 'horizontal', 'setup'];
+  const ALIAS = { request: ['vertical'], checks: ['setup', 'try'], cheatsheet: ['setup'], try: ['setup', 'try'] };
+  const tabButtons = $$('nav.tabs button');
+  function showTab(raw){
+    let name = raw, anchor = null;
+    if (ALIAS[raw]) [name, anchor] = ALIAS[raw];
+    if (!TABS.includes(name)) name = 'overview';
+    tabButtons.forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+    TABS.forEach(t => { $('#tab-' + t).hidden = t !== name; });
+    try { history.replaceState(null, '', '#' + name); } catch (e) {}
+    if (name !== 'overview') exStop();
+    if (anchor) requestAnimationFrame(() => { const a = document.getElementById(anchor); if (a) a.scrollIntoView(); });
+  }
+  tabButtons.forEach(b => b.addEventListener('click', () => { showTab(b.dataset.tab); scrollTo(0, 0); }));
+  addEventListener('hashchange', () => showTab((location.hash || '').slice(1)));
+
+  /* ---------- setup steppers (vertical + horizontal) ---------- */
+  function stepper(rootId, steps){
+    const root = $('#' + rootId);
+    root.innerHTML = '<div class="stepper" role="tablist"></div><div class="setup-panel" role="tabpanel"></div>';
+    const list = $('.stepper', root), panel = $('.setup-panel', root);
+    steps.forEach((s, i) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.setAttribute('role', 'tab'); b.className = s.zone ? 'z-' + s.zone : '';
+      b.innerHTML = `<span class="n">${i + 1}</span><span><b></b><small></small></span>`;
+      $('b', b).textContent = s.t; $('small', b).textContent = s.where;
+      b.addEventListener('click', () => pick(i));
+      b.addEventListener('keydown', e => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft'){ e.preventDefault(); const j = (i + (e.key === 'ArrowRight' ? 1 : steps.length - 1)) % steps.length; pick(j); list.children[j].focus(); }
+      });
+      list.appendChild(b);
+    });
+    function pick(i){
+      const s = steps[i];
+      [...list.children].forEach((b, j) => { b.setAttribute('aria-selected', String(i === j)); b.tabIndex = i === j ? 0 : -1; });
+      panel.className = 'setup-panel' + (s.zone ? ' z-' + s.zone : '');
+      panel.innerHTML = `<div class="txt swap"><span class="where"><svg class="ic"><use href="#i-file"/></svg><span></span></span><h4></h4>${s.text}</div><pre class="swap"><code>${s.plain ? esc(s.code) : hl(s.code)}</code></pre>`;
+      $('.where span', panel).textContent = s.where;
+      $('h4', panel).textContent = s.t;
+    }
+    pick(0);
+  }
+
+  const CODE = {
+    group: `vercel microfrontends create-group --name mfe-lite \\
+  --default-app mfe-lite-shell \\
+  --project mfe-lite-shell --project mfe-lite-blog \\
+  --project-default-route mfe-lite-blog=/docs --yes`,
+    table: `{
+  "applications": {
+    "mfe-lite-shell": {
+      "packageName": "@mfe-lite/shell"
+    },
+    "mfe-lite-blog": {
+      "packageName": "@mfe-lite/blog",
+      "routing": [
+        { "group": "blog", "paths": ["/blog", "/blog/:path*"] },
+        { "group": "docs", "paths": ["/docs", "/docs/:path*"] },
+        { "group": "components",
+          "paths": ["/components", "/components/:path*"] }
+      ]
+    }
+  }
+}`,
+    tableFull: `{
   "$schema": "https://openapi.vercel.sh/microfrontends.json",
   "applications": {
     "mfe-lite-shell": {
@@ -288,8 +991,7 @@ svg text.halo{paint-order:stroke;stroke:var(--surface-2);stroke-width:4px;stroke
       "routing": [
         { "group": "blog", "paths": ["/blog", "/blog/:path*"] },
         { "group": "docs", "paths": ["/docs", "/docs/:path*"] },
-        { "group": "components",
-          "paths": ["/components", "/components/:path*"] }
+        { "group": "components", "paths": ["/components", "/components/:path*"] }
       ],
       "development": { "local": 3001 }
     }
@@ -297,575 +999,808 @@ svg text.halo{paint-order:stroke;stroke:var(--surface-2);stroke-width:4px;stroke
   "options": {
     "localProxyPort": 3024
   }
-}</code></pre>
-    </div>
-    <div class="grid">
-      <div class="card zone-shell">
-        <h3><svg class="ic"><use href="#i-server"/></svg>Shell · default app</h3>
-        <dl class="kv">
-          <dt>Package</dt><dd><code>@mfe-lite/shell</code></dd>
-          <dt>Paths</dt><dd><code>/</code>, <code>/horizontal</code> and every path nobody claims (including its 404 and <code>/lab.html</code>)</dd>
-          <dt>Vercel</dt><dd><code>mfe-lite-shell</code>, Root Directory <code>apps/shell</code></dd>
-          <dt>Owns</dt><dd><code>microfrontends.json</code>; a <code>proxy.ts</code> that only stamps the zone header</dd>
-        </dl>
-      </div>
-      <div class="card zone-blog">
-        <h3><svg class="ic"><use href="#i-file"/></svg>Blog · child zone</h3>
-        <dl class="kv">
-          <dt>Package</dt><dd><code>@mfe-lite/blog</code></dd>
-          <dt>Paths</dt><dd><code>/blog</code>, <code>/blog/*</code>, <code>/docs</code>, <code>/docs/*</code>, <code>/components/*</code> (the two components <code>/horizontal</code> embeds)</dd>
-          <dt>Vercel</dt><dd><code>mfe-lite-blog</code>, Root Directory <code>apps/blog</code></dd>
-          <dt>Assets</dt><dd><code>/vc-ap-5d190e/_next/…</code> (hashed prefix from <code>withMicrofrontends</code>)</dd>
-        </dl>
-      </div>
-      <div class="card">
-        <h3><svg class="ic"><use href="#i-box"/></svg>packages/ui</h3>
-        <p class="muted">The shared header. Its links use <code>Link</code> from <code>@vercel/microfrontends/next/client</code>: inside a zone a link stays client-side, into the other zone it becomes a full navigation. A badge shows <em>served by: shell | blog</em>, the same fact as the <code>x-mfe-zone</code> header, and a ♥ badge shows the like count both zones share through the browser (<code>@mfe-lite/ui/likes</code>).</p>
-      </div>
-    </div>
-  </div>
+}`,
+    withMfe: `import { withMicrofrontends } from "@vercel/microfrontends/next/config";
 
-  <div class="grid cols-3">
-    <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-git"/></svg></div><div><b>Independent deploys</b><span>Each app builds, deploys and rolls back as its own project; a failed blog build leaves the shell up. A blog-only change builds only the blog.</span></div></div>
-    <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-globe"/></svg></div><div><b>One URL</b><span>Visitors, cookies and links all live on the shell's domain. The blog project's own domain is never used by visitors.</span></div></div>
-    <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-route"/></svg></div><div><b>One routing file</b><span><code>microfrontends.json</code> lists the paths the blog owns; Vercel applies it before any app code runs. <a href="#request">Follow a request →</a></span></div></div>
-    <div class="card fact"><div class="glyph"><svg class="ic"><use href="#i-panel"/></svg></div><div><b>One page, two deployments</b><span>The shell's <code>/horizontal</code> embeds two components the blog builds and deploys; a Like in one of them updates the shell's header. <a href="#horizontal">See how →</a></span></div></div>
-  </div>
-</section>
+const nextConfig = { transpilePackages: ["@mfe-lite/ui"] };
 
-<!-- ================= REQUEST ================= -->
-<section id="tab-request" role="tabpanel" aria-labelledby="tab-btn-request" hidden>
-  <div class="sheet-head">
-    <span class="eyebrow"><svg class="ic"><use href="#i-route"/></svg>Sheet 2 · Request</span>
-    <h2>One decision, before any code runs.</h2>
-    <p class="lead">Vercel's routing layer matches the path against the table in <code>microfrontends.json</code> and picks the project. It runs no application code, so neither app ever forwards a request to the other. The project that answers stamps <code>x-mfe-zone</code> on the response, so the result can be checked with curl.</p>
-  </div>
+// Reads microfrontends.json at build time, gives the blog
+// its asset prefix (/vc-ap-5d190e) and bakes a copy of the
+// routing table into the client for Link.
+export default withMicrofrontends(nextConfig);`,
+    link: `// packages/ui/src/header.tsx
+import { Link } from "@vercel/microfrontends/next/client";
 
-  <div class="grid cols-2">
-    <div class="card step"><span class="num">1</span><div><h3>Vercel routing picks the project</h3><p class="muted">Reads the <code>routing</code> entries of <code>microfrontends.json</code>. <code>/blog</code>, <code>/docs</code>, <code>/components</code> and every path under them belong to the blog, so the request goes straight to the blog project. Any other path has no entry and goes to the default app, the shell.</p></div></div>
-    <div class="card step"><span class="num">2</span><div><h3>The project answers</h3><p class="muted">The chosen project renders the page. Its <code>proxy.ts</code> decides nothing: it only sets <code>x-mfe-zone: shell</code> or <code>x-mfe-zone: blog</code> on the response. A path nobody has a page for gets the shell's 404.</p></div></div>
-  </div>
+<Link href="/">Home</Link>                {/* shell */}
+<Link href="/blog">Blog</Link>            {/* blog */}
+<Link href="/docs">Docs</Link>            {/* blog */}
+<Link href="/horizontal">Horizontal</Link> {/* shell */}
 
-  <div class="player">
-    <label for="rq-path">Path
-      <select id="rq-path">
-        <option value="/">/</option>
-        <option value="/blog" selected>/blog</option>
-        <option value="/blog/hello-world">/blog/hello-world</option>
-        <option value="/docs">/docs</option>
-        <option value="/horizontal">/horizontal</option>
-        <option value="/components/latest-posts">/components/latest-posts</option>
-        <option value="/does-not-exist">/does-not-exist</option>
-      </select>
-    </label>
-    <span class="spacer"></span>
-    <button class="btn primary" id="rq-play"><svg class="ic"><use href="#i-play"/></svg>Play</button>
-    <button class="btn" id="rq-step"><svg class="ic"><use href="#i-step"/></svg>Step</button>
-    <button class="btn" id="rq-reset"><svg class="ic"><use href="#i-reset"/></svg>Reset</button>
-  </div>
+// apps/shell/app/layout.tsx (the blog's is the same)
+<PrefetchCrossZoneLinksProvider>
+  <Header zone="shell" />
+  <main>{children}</main>
+  <PrefetchCrossZoneLinks />
+</PrefetchCrossZoneLinksProvider>`,
+    shellProxy: `import { NextResponse } from "next/server";
 
-  <figure>
-    <div class="frame">
-    <svg id="rq-svg" viewBox="0 0 880 280" role="img" aria-label="Request path: browser, the shell domain, Vercel routing with its routing table, then either the shell project or the blog project">
-      <!-- step marker -->
-      <text x="475" y="36" class="lbl" text-anchor="middle">THE ONLY ROUTING DECISION</text>
-      <!-- edges -->
-      <path id="e-browser-domain" d="M140 90h28" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
-      <path id="e-domain-routing" d="M350 90h28" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
-      <path id="e-routing-shell" d="M570 90h38" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
-      <path id="e-routing-blog" d="M592 202 C 602 202, 598 232, 608 232" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
-      <text x="589" y="82" class="lbl" text-anchor="middle">else</text>
-      <text x="596" y="194" class="lbl halo">match</text>
-      <!-- stations -->
-      <g class="station" data-st="browser"><rect x="20" y="58" width="120" height="64" rx="12"/>
-        <g transform="translate(42 90)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-user"/></svg></g>
-        <text x="60" y="87" class="title">Browser</text><text x="60" y="104" class="lbl">GET path</text></g>
-      <g class="station" data-st="domain"><rect x="170" y="58" width="180" height="64" rx="12"/>
-        <g transform="translate(192 90)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-globe"/></svg></g>
-        <text x="210" y="81" class="title">Shell domain</text><text x="210" y="96" class="mono">mfe-lite-shell</text><text x="210" y="110" class="mono">.vercel.app</text></g>
-      <g class="station" data-st="routing"><rect x="380" y="58" width="190" height="64" rx="12"/>
-        <g transform="translate(402 90)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-route"/></svg></g>
-        <text x="422" y="81" class="title">Vercel routing</text><text x="422" y="96" class="lbl">group mfe-lite</text><text x="422" y="110" class="lbl">matches paths only</text></g>
-      <g class="station shell" data-st="shell"><rect x="610" y="58" width="250" height="64" rx="12"/>
-        <g transform="translate(632 90)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-server"/></svg></g>
-        <text x="652" y="81" class="title">Shell · default app</text><text x="652" y="96" class="lbl">pages: /, /horizontal, 404</text><text x="652" y="110" class="lbl">proxy.ts stamps the zone</text></g>
-      <g class="station blog" data-st="blog"><rect x="610" y="200" width="250" height="64" rx="12"/>
-        <g transform="translate(632 232)"><svg class="glyph" width="22" height="22" viewBox="0 0 24 24" x="-11" y="-11"><use href="#i-file"/></svg></g>
-        <text x="652" y="223" class="title">Blog · child zone</text><text x="652" y="238" class="lbl">/blog/*, /docs/*, /components/*</text><text x="652" y="252" class="lbl">proxy.ts stamps the zone</text></g>
-      <!-- routing table panel -->
-      <g class="panel" id="rq-table"><rect x="364" y="132" width="228" height="140" rx="10" class="box"/>
-        <text x="376" y="149" class="lbl">routing table (microfrontends.json)</text>
-        <g class="prow blog" data-row="blog"><rect x="372" y="156" width="212" height="24" rx="6"/><text x="380" y="172" class="mono">/blog, /blog/:path* → blog</text></g>
-        <g class="prow blog" data-row="docs"><rect x="372" y="184" width="212" height="24" rx="6"/><text x="380" y="200" class="mono">/docs, /docs/:path* → blog</text></g>
-        <g class="prow blog" data-row="components"><rect x="372" y="212" width="212" height="24" rx="6"/><text x="380" y="228" class="mono">/components/:path* → blog</text></g>
-        <g class="prow" data-row="else"><rect x="372" y="240" width="212" height="24" rx="6"/><text x="380" y="256" class="mono">anything else → shell</text></g>
-      </g>
-      <!-- response tag -->
-      <g id="rq-tag" opacity="0"><rect x="20" y="150" width="330" height="54" rx="10" class="tag"/>
-        <text x="34" y="171" class="lbl">response</text>
-        <text id="rq-tag-text" x="34" y="190" class="mono">200 · x-mfe-zone: shell</text></g>
-      <!-- packet -->
-      <circle id="rq-packet" class="packet" cx="80" cy="90" r="7" opacity="0"/>
-    </svg>
-    </div>
-    <figcaption id="rq-caption">The highlighted row is the rule that matched.</figcaption>
-  </figure>
+export function proxy() {
+  const response = NextResponse.next();
+  response.headers.set("x-mfe-zone", "shell");
+  return response;
+}
 
-  <div class="verdict" id="rq-verdict"><span class="badge dim" id="rq-badge">idle</span><span class="caption" id="rq-summary">Press Play to send the request.</span></div>
-  <div class="ledger" id="rq-ledger" aria-live="polite"><div class="empty">The ledger fills as the dot moves. Each row is one hop and what the real code does there.</div></div>
+export const config = {
+  matcher: [
+    // Skip framework files, the blog's files (vc-ap-*) and the blog's paths.
+    "/((?!_next/|vc-ap-|favicon.ico|blog/|blog$|docs/|docs$|components/|components$).*)",
+  ],
+};`,
+    blogProxy: `import { NextResponse } from "next/server";
 
-  <div class="table-wrap">
-    <table>
-      <caption>Every path at a glance</caption>
-      <thead><tr><th>Path</th><th>Routing table</th><th>Answered by</th><th>Response</th></tr></thead>
-      <tbody>
-        <tr><td class="mono">/</td><td>no entry → default app</td><td><span class="badge shell">shell</span></td><td class="mono">200</td></tr>
-        <tr><td class="mono">/blog</td><td><code>/blog</code></td><td><span class="badge blog">blog</span></td><td class="mono">200</td></tr>
-        <tr><td class="mono">/blog/hello-world</td><td><code>/blog/:path*</code></td><td><span class="badge blog">blog</span></td><td class="mono">200</td></tr>
-        <tr><td class="mono">/docs</td><td><code>/docs</code></td><td><span class="badge blog">blog</span></td><td class="mono">200</td></tr>
-        <tr><td class="mono">/horizontal</td><td>no entry → default app</td><td><span class="badge shell">shell</span></td><td class="mono">200 (embeds two blog components, see <a href="#horizontal">Horizontal</a>)</td></tr>
-        <tr><td class="mono">/components/latest-posts</td><td><code>/components/:path*</code></td><td><span class="badge blog">blog</span></td><td class="mono">200 (fetched by the shell's server)</td></tr>
-        <tr><td class="mono">/does-not-exist</td><td>no entry → default app</td><td><span class="badge shell">shell</span></td><td class="mono">404 (the shell's not-found page)</td></tr>
-      </tbody>
-    </table>
-  </div>
-</section>
+export function proxy() {
+  const response = NextResponse.next();
+  response.headers.set("x-mfe-zone", "blog");
+  return response;
+}
 
-<!-- ================= HORIZONTAL ================= -->
-<section id="tab-horizontal" role="tabpanel" aria-labelledby="tab-btn-horizontal" hidden>
-  <div class="sheet-head">
-    <span class="eyebrow"><svg class="ic"><use href="#i-panel"/></svg>Sheet 3 · Horizontal</span>
-    <h2>One page, two deployments.</h2>
-    <p class="lead">Routing gives each path to one app: that is the vertical split. The shell's <a href="https://mfe-lite-shell.vercel.app/horizontal"><code>/horizontal</code></a> shows the horizontal split: the page belongs to the shell, but two of its cards are rendered by the blog project, from the blog's latest deployment, on every request.</p>
-  </div>
+export const config = {
+  matcher: ["/blog", "/blog/:path*", "/docs", "/docs/:path*", "/components", "/components/:path*"],
+};`,
+    expose: `import { ExposeRemoteComponent } from "remote-components/remote/nextjs/app";
+import { Reactions } from "./reactions";
 
-  <figure>
-    <div class="frame">
-    <svg viewBox="0 0 880 322" role="img" aria-label="Sequence: the browser asks for /horizontal; routing sends it to the shell; the shell fetches /components/latest-posts and /components/reactions through the same routing, which sends them to the blog; the blog returns their HTML; the shell returns one page; the browser then loads the blog's JavaScript from the vc-ap prefix.">
-      <!-- lanes -->
-      <g class="station"><rect x="10" y="12" width="140" height="44" rx="10"/><text x="80" y="39" class="title" text-anchor="middle">Browser</text></g>
-      <g class="station"><rect x="250" y="12" width="140" height="44" rx="10"/><text x="320" y="32" class="title" text-anchor="middle">Vercel routing</text><text x="320" y="48" class="lbl" text-anchor="middle">group mfe-lite</text></g>
-      <g class="station shell"><rect x="490" y="12" width="140" height="44" rx="10"/><text x="560" y="32" class="title" text-anchor="middle">Shell</text><text x="560" y="48" class="lbl" text-anchor="middle">/horizontal (per request)</text></g>
-      <g class="station blog"><rect x="730" y="12" width="140" height="44" rx="10"/><text x="800" y="32" class="title" text-anchor="middle">Blog</text><text x="800" y="48" class="lbl" text-anchor="middle">/components/*</text></g>
-      <path d="M80 56V312M320 56V312M560 56V312M800 56V312" stroke="var(--line)" stroke-width="1.4" stroke-dasharray="4 4" fill="none"/>
-      <!-- 1 -->
-      <path d="M84 96H314" class="edge" marker-end="url(#arr)" color="var(--muted)"/>
-      <text x="200" y="88" class="mono halo" text-anchor="middle">1 · GET /horizontal</text>
-      <!-- 2 -->
-      <path d="M324 126H554" class="edge lit" marker-end="url(#arr)" color="var(--accent)"/>
-      <text x="440" y="118" class="lbl halo" text-anchor="middle">2 · no entry → default app</text>
-      <!-- 3 -->
-      <path d="M556 162H326" class="edge lit" marker-end="url(#arr)" color="var(--accent)"/>
-      <text x="440" y="154" class="mono halo" text-anchor="middle">3 · GET /components/…</text>
-      <!-- 4 -->
-      <path d="M324 192H794" class="edge lit blog" marker-end="url(#arr)" color="var(--info)"/>
-      <text x="680" y="184" class="lbl halo" text-anchor="middle">4 · match /components/:path* → blog</text>
-      <!-- 5 -->
-      <path d="M796 224H566" class="edge lit blog" marker-end="url(#arr)" color="var(--info)"/>
-      <text x="680" y="216" class="lbl halo" text-anchor="middle">5 · the component's HTML</text>
-      <text x="680" y="242" class="lbl halo" text-anchor="middle">steps 3–5 run once per slot</text>
-      <!-- 6 -->
-      <path d="M556 266H86" class="edge lit" marker-end="url(#arr)" color="var(--accent)"/>
-      <text x="320" y="258" class="lbl halo" text-anchor="middle">6 · one HTML page: shell text + both components</text>
-      <!-- 7 -->
-      <path d="M84 300H794" class="edge dashed lit blog" marker-end="url(#arr)" color="var(--info)"/>
-      <text x="440" y="292" class="mono halo" text-anchor="middle">7 · GET /vc-ap-5d190e/_next/… → the Like button hydrates</text>
-    </svg>
-    </div>
-    <figcaption>Step 3 is the shell's server calling <code>https://mfe-lite-shell.vercel.app/components/…</code>: the same domain and the same routing as a visitor. Steps 1–6 produce a page that works without JavaScript; step 7 makes the Like button interactive.</figcaption>
-  </figure>
-
-  <div class="two">
-    <div class="card">
-      <h3><svg class="ic"><use href="#i-panel"/></svg>The page, piece by piece</h3>
-      <div class="hz-page" id="hz-page" data-blog="up">
-        <div class="hz-bar mono">mfe-lite-shell.vercel.app/horizontal</div>
-        <div class="hz-head"><b>MFE Lite</b><span class="badge shell" title="The shell's header">♥ <span class="hz-count">0</span></span></div>
-        <div class="hz-body">
-          <p><b>One page, two deployments</b></p>
-          <p class="muted">Shell text · <span class="badge shell">served by: shell</span> <span class="mono">build 2ccdb5d</span></p>
-          <div class="hz-slot">
-            <div class="hz-up"><b>Latest posts</b><span class="muted">Hello, world · Why microfrontends · All posts</span><span><span class="badge blog">served by: blog</span> <span class="mono">build 57e241f</span></span></div>
-            <div class="hz-down">Latest posts is unavailable right now. The rest of this page is unaffected.</div>
-          </div>
-          <div class="hz-slot">
-            <div class="hz-up"><b>Reactions</b><span><button class="btn" id="hz-like" type="button">Like · <span class="hz-count">0</span></button></span><span><span class="badge blog">served by: blog</span> <span class="mono">build 57e241f</span></span></div>
-            <div class="hz-down">Reactions is unavailable right now. The rest of this page is unaffected.</div>
-          </div>
-        </div>
-      </div>
-      <div class="player" style="padding:.5rem 0;border:0">
-        <span class="muted" style="font-size:.86rem">Blog project</span>
-        <button class="btn primary" id="hz-up" aria-pressed="true">up</button>
-        <button class="btn" id="hz-down" aria-pressed="false">down</button>
-      </div>
-      <p class="muted" id="hz-note">Both cards come from the blog's latest production deployment. The commits are the ones recorded after a blog-only deploy: the cards changed, the shell's text did not. Press Like: the ♥ in the shell's header follows.</p>
-    </div>
-    <div class="grid">
-      <div class="card zone-blog">
-        <h3><svg class="ic"><use href="#i-file"/></svg>Blog: expose</h3>
-<pre><code>// apps/blog/app/components/reactions/page.tsx
+// A remote Client Component: its JavaScript is built by the
+// blog and hydrates inside a shell page.
 export default function ReactionsRemote() {
   return (
-    &lt;ExposeRemoteComponent&gt;
-      &lt;section className="card"&gt;
-        &lt;Reactions /&gt;   {/* "use client" */}
-      &lt;/section&gt;
-    &lt;/ExposeRemoteComponent&gt;
+    <ExposeRemoteComponent>
+      <section className="card" data-remote="reactions">
+        <h2>Reactions</h2>
+        <Reactions />
+      </section>
+    </ExposeRemoteComponent>
   );
-}</code></pre>
-      </div>
-      <div class="card zone-shell">
-        <h3><svg class="ic"><use href="#i-server"/></svg>Shell: consume</h3>
-<pre><code>// apps/shell/app/horizontal/remote-slot.tsx
-&lt;SlotBoundary label={label}&gt;
-  &lt;Suspense fallback={&lt;Loading /&gt;}&gt;
-    &lt;ConsumeRemoteComponent src={src} /&gt;
-  &lt;/Suspense&gt;
-&lt;/SlotBoundary&gt;</code></pre>
-        <p class="muted"><code>/horizontal</code> sets <code>dynamic = "force-dynamic"</code>. Both <code>next.config.ts</code> files use <code>withRemoteComponentsConfig(withMicrofrontends(config))</code>; the library is <code>remote-components</code> 0.4.16.</p>
-      </div>
-    </div>
-  </div>
+}`,
+    latest: `import { ExposeRemoteComponent } from "remote-components/remote/nextjs/app";
+import { POSTS } from "@/lib-posts";
 
-  <div class="table-wrap">
-    <table>
-      <caption>A blog-only commit, recorded on 2026-11-18</caption>
-      <thead><tr><th>Commit</th><th>Changed</th><th>Shell</th><th>Blog</th><th><code>/horizontal</code> afterwards</th></tr></thead>
-      <tbody>
-        <tr><td class="mono">2ccdb5d</td><td>both apps, <code>packages/ui</code>, lockfile</td><td><span class="badge ok">READY</span> 26 s</td><td><span class="badge ok">READY</span> 26 s</td><td>shell text <span class="mono">2ccdb5d</span>, cards <span class="mono">2ccdb5d</span></td></tr>
-        <tr><td class="mono">57e241f</td><td><code>apps/blog/…/latest-posts/page.tsx</code> only</td><td><span class="badge dim">CANCELED</span> not affected</td><td><span class="badge ok">READY</span> 20 s</td><td>shell text <span class="mono">2ccdb5d</span>, cards <span class="mono">57e241f</span> with "All posts"</td></tr>
-      </tbody>
-    </table>
-  </div>
+// A remote Server Component: rendered by the blog,
+// embedded in a shell page. No client JavaScript.
+export default function LatestPostsRemote() {
+  return (
+    <ExposeRemoteComponent>
+      <section className="card" data-remote="latest-posts">
+        <h2>Latest posts</h2>
+        <ul>
+          {POSTS.map((p) => (
+            <li key={p.slug}>
+              {/* A plain <a>: /blog belongs to another zone from the host's point of view. */}
+              <a href={\`/blog/\${p.slug}\`}>{p.title}</a>: {p.body}
+            </li>
+          ))}
+        </ul>
+        <p><a href="/blog">All posts</a></p>
+      </section>
+    </ExposeRemoteComponent>
+  );
+}`,
+    componentsGroup: `// apps/shell/microfrontends.json, under "mfe-lite-blog"
+"routing": [
+  { "group": "blog", "paths": ["/blog", "/blog/:path*"] },
+  { "group": "docs", "paths": ["/docs", "/docs/:path*"] },
+  { "group": "components",
+    "paths": ["/components", "/components/:path*"] }
+]`,
+    consume: `// apps/shell/app/horizontal/page.tsx
+<RemoteSlot src="/components/latest-posts" label="Latest posts" />
+<RemoteSlot src="/components/reactions" label="Reactions" />
 
-  <div class="grid cols-3">
-    <div class="card"><h3><svg class="ic"><use href="#i-box"/></svg>Isolated</h3><p class="muted">Each card renders in an open Shadow DOM with the blog's own stylesheet. The shell's CSS does not reach it, and <code>document.querySelector</code> on the page does not find it.</p></div>
-    <div class="card"><h3><svg class="ic"><use href="#i-bolt"/></svg>Not free</h3><p class="muted">The cards load the blog's own JavaScript: 12 files, about 190 KB transferred, next to the shell's 12 files, about 187 KB.</p></div>
-    <div class="card"><h3><svg class="ic"><use href="#i-alert"/></svg>Limits</h3><p class="muted">Preview deployments sit behind Deployment Protection, so the page is shown on production only. Links inside a card are plain <code>&lt;a&gt;</code>. <code>remote-components</code> is 0.x.</p></div>
-  </div>
+// apps/shell/app/horizontal/remote-slot.tsx
+export function RemoteSlot({ src, label }) {
+  return (
+    <SlotBoundary label={label}>          {/* error boundary */}
+      <Suspense fallback={<div className="card">Loading {label}…</div>}>
+        <ConsumeRemoteComponent src={src} />
+      </Suspense>
+    </SlotBoundary>
+  );
+}`,
+    dynamic: `// apps/shell/app/horizontal/page.tsx
 
-  <div class="sheet-head">
-    <h2>One count, two apps.</h2>
-    <p class="lead">The Like button is the blog's code; the ♥ in the header is the shell's. <code>remote-components</code> shares only <code>react</code>, <code>react-dom</code> and <code>next/*</code>, so each zone bundles its own copy of <code>@mfe-lite/ui</code>: a module variable or a React context there would exist twice. The two copies agree through the browser instead, which both zones reach on one origin.</p>
-  </div>
+// Rendered per request, so a blog deployment shows up on the
+// next page load without rebuilding the shell.
+export const dynamic = "force-dynamic";`,
+    configs: `import { withMicrofrontends } from "@vercel/microfrontends/next/config";
+import { withRemoteComponentsConfig } from "remote-components/config/nextjs";
 
-  <div class="two">
-    <div class="card">
-      <h3><svg class="ic"><use href="#i-box"/></svg>The browser contract</h3>
-      <dl class="kv">
-        <dt><code>localStorage</code></dt><dd><code>mfe-lite:likes</code> holds the count: it survives a reload and a move between zones</dd>
-        <dt><code>window</code> event</dt><dd><code>mfe-lite:likes</code>, fired after each change: every badge on the current page updates</dd>
-        <dt><code>storage</code> event</dt><dd>fired by the browser in other tabs: their badges update without a reload</dd>
-      </dl>
-      <p class="muted">The count is per browser and per origin: the blog project's own domain keeps its own. A count shared by every visitor would need server-side storage.</p>
-    </div>
-    <div class="card zone-blog">
-      <h3><svg class="ic"><use href="#i-file"/></svg>Blog: the button</h3>
-<pre><code>// apps/blog/app/components/reactions/reactions.tsx
+const nextConfig = { transpilePackages: ["@mfe-lite/ui"] };
+
+// The same line in apps/shell and apps/blog.
+export default withRemoteComponentsConfig(withMicrofrontends(nextConfig));`,
+    page: `import { RemoteSlot } from "./remote-slot";
+
+export const metadata = { title: "Horizontal" };
+
+// Rendered per request, so a blog deployment shows up on the next
+// page load without rebuilding the shell.
+export const dynamic = "force-dynamic";
+
+export default function Horizontal() {
+  return (
+    <>
+      <h1>One page, two deployments</h1>
+      <p>This text comes from the shell. The two cards below are
+         rendered by the blog project and embedded here at request time.</p>
+      <RemoteSlot src="/components/latest-posts" label="Latest posts" />
+      <RemoteSlot src="/components/reactions" label="Reactions" />
+    </>
+  );
+}`,
+    slot: `import { Suspense } from "react";
+import { ConsumeRemoteComponent } from "remote-components/host/nextjs/app";
+import { SlotBoundary } from "./slot-boundary";
+
+// One remote on a page. Suspense streams it in; SlotBoundary keeps
+// a failing remote from taking the page down.
+export function RemoteSlot({ src, label }: { src: string; label: string }) {
+  return (
+    <SlotBoundary label={label}>
+      <Suspense fallback={<div className="card">Loading {label}…</div>}>
+        <ConsumeRemoteComponent src={src} />
+      </Suspense>
+    </SlotBoundary>
+  );
+}`,
+    boundary: `"use client";
+
+import { Component, type ReactNode } from "react";
+
+export class SlotBoundary extends Component<{ label: string; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    if (this.state.failed) {
+      return (
+        <div className="card" data-slot-failed={this.props.label}>
+          {this.props.label} is unavailable right now. The rest of this page is unaffected.
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}`,
+    reactions: `"use client";
+
 import { addLike, useLikes } from "@mfe-lite/ui/likes";
 
-const likes = useLikes();   // useSyncExternalStore
-&lt;button onClick={() =&gt; addLike()}&gt;Like · {likes}&lt;/button&gt;</code></pre>
-      <p class="muted">The header renders <code>LikesBadge</code>, which calls the same <code>useLikes()</code>. <code>apps/shell/__tests__/likes.test.ts</code> loads two copies of the module, as the two zones do, and checks that they agree.</p>
-    </div>
-  </div>
+// The count lives in the browser (see @mfe-lite/ui/likes), so the
+// shell's header badge sees every click.
+export function Reactions() {
+  const likes = useLikes();
+  return (
+    <button type="button" onClick={() => addLike()}>
+      Like · {likes}
+    </button>
+  );
+}`,
+    header: `import { Link } from "@vercel/microfrontends/next/client";
+import { LikesBadge } from "./likes/client";
+import { ZoneBadge, type Zone } from "./zone-badge";
 
-  <div class="table-wrap">
-    <table>
-      <caption>Shared likes on production, commit 31caaea, recorded on 2026-11-18</caption>
-      <thead><tr><th>Step</th><th>Zone</th><th>Header</th></tr></thead>
-      <tbody>
-        <tr><td>three Likes in the blog's card on <code>/horizontal</code></td><td><span class="badge shell">shell</span> page, <span class="badge blog">blog</span> card</td><td class="mono">♥ 3</td></tr>
-        <tr><td>reload <code>/horizontal</code></td><td><span class="badge shell">shell</span></td><td class="mono">♥ 3</td></tr>
-        <tr><td>open <code>/blog/hello-world</code>, two Likes</td><td><span class="badge blog">blog</span></td><td class="mono">♥ 5</td></tr>
-        <tr><td>header Home → <code>/</code></td><td><span class="badge shell">shell</span></td><td class="mono">♥ 5</td></tr>
-        <tr><td>a second tab on <code>/docs</code>, one Like in the first tab</td><td><span class="badge blog">blog</span></td><td class="mono">♥ 6, no reload</td></tr>
-        <tr><td><code>mfe-lite-blog.vercel.app/blog/hello-world</code></td><td>another origin</td><td class="mono">♥ 0</td></tr>
-      </tbody>
-    </table>
-  </div>
-</section>
+const NAV = [
+  { href: "/", label: "Home" },
+  { href: "/blog", label: "Blog" },
+  { href: "/docs", label: "Docs" },
+  { href: "/horizontal", label: "Horizontal" },
+];
 
-<!-- ================= CHECKS ================= -->
-<section id="tab-checks" role="tabpanel" aria-labelledby="tab-btn-checks" hidden>
-  <div class="sheet-head">
-    <span class="eyebrow"><svg class="ic"><use href="#i-check"/></svg>Sheet 4 · Checks</span>
-    <h2>Every claim has a curl behind it.</h2>
-    <p class="lead" id="ck-lead">Recorded against <code>https://mfe-lite-shell.vercel.app</code> after both projects were built from Git: the vertical checks on 2026-11-06, the horizontal ones on 2026-11-18, all of them again on 2026-11-18 after the upgrade to <code>next</code> 16.4.6, and the shared like count in a browser the same day. Source: <code>EVIDENCE.md</code> in the repo. Toolchain: Vercel CLI 65.2.0, <code>@vercel/microfrontends</code> 2.4.2, <code>next</code> 16.4.6, <code>remote-components</code> 0.4.16.</p>
-  </div>
+export function Header({ zone }: { zone: Zone }) {
+  return (
+    <header className="header">
+      <Link href="/" className="brand">MFE Lite</Link>
+      <nav className="nav">
+        {NAV.map((item) => (
+          <Link key={item.href} href={item.href}>{item.label}</Link>
+        ))}
+      </nav>
+      <LikesBadge />
+      <ZoneBadge zone={zone} />
+    </header>
+  );
+}`,
+    layout: `import { PrefetchCrossZoneLinks, PrefetchCrossZoneLinksProvider } from "@vercel/microfrontends/next/client";
+import { Header } from "@mfe-lite/ui";
+import "@mfe-lite/ui/styles.css";
 
-  <div class="table-wrap">
-    <table>
-      <caption>Production requests</caption>
-      <thead><tr><th>Path</th><th>Expected zone</th><th>Observed</th><th>Note</th></tr></thead>
-      <tbody>
-        <tr><td class="mono">/</td><td><span class="badge shell">shell</span></td><td class="mono">200 · x-mfe-zone: shell</td><td>default app; HTML references <code>/_next/static/…</code> with no prefix</td></tr>
-        <tr><td class="mono">/blog</td><td><span class="badge blog">blog</span></td><td class="mono">200 · x-mfe-zone: blog</td><td><code>&lt;h1&gt;Blog&lt;/h1&gt;</code>; HTML references <code>/vc-ap-5d190e/_next/…</code></td></tr>
-        <tr><td class="mono">/blog/hello-world</td><td><span class="badge blog">blog</span></td><td class="mono">200 · x-mfe-zone: blog</td><td><code>/blog/:path*</code></td></tr>
-        <tr><td class="mono">/docs</td><td><span class="badge blog">blog</span></td><td class="mono">200 · x-mfe-zone: blog</td><td>routed by the group</td></tr>
-        <tr><td class="mono">/docs/routing</td><td><span class="badge blog">blog</span></td><td class="mono">200 · x-mfe-zone: blog</td><td><code>/docs/:path*</code></td></tr>
-        <tr><td class="mono">/does-not-exist</td><td><span class="badge shell">shell</span></td><td class="mono">404 · x-mfe-zone: shell</td><td>nobody claims it, so the shell answers with its 404</td></tr>
-        <tr><td class="mono">/horizontal</td><td><span class="badge shell">shell</span></td><td class="mono">200 · x-mfe-zone: shell</td><td>HTML holds both blog components, server-rendered, no fallback</td></tr>
-        <tr><td class="mono">/components/latest-posts</td><td><span class="badge blog">blog</span></td><td class="mono">200 · x-mfe-zone: blog</td><td><code>/components/:path*</code>; a Server Component</td></tr>
-        <tr><td class="mono">/components/reactions</td><td><span class="badge blog">blog</span></td><td class="mono">200 · x-mfe-zone: blog</td><td>a Client Component (Like button)</td></tr>
-        <tr><td class="mono">/vc-ap-5d190e/_next/static/immutable/chunks/01bz81oyfyjyz.js</td><td><span class="badge blog">blog</span></td><td class="mono">200 · application/javascript</td><td>child asset served through the shell's domain under the hashed prefix</td></tr>
-      </tbody>
-    </table>
-  </div>
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        <PrefetchCrossZoneLinksProvider>
+          <Header zone="shell" />
+          <main>{children}</main>
+          <PrefetchCrossZoneLinks />
+        </PrefetchCrossZoneLinksProvider>
+      </body>
+    </html>
+  );
+}`,
+    store: `export const LIKES_KEY = "mfe-lite:likes";
+export const LIKES_EVENT = "mfe-lite:likes";
 
-  <div class="two">
-    <div class="table-wrap">
-      <table>
-        <caption>The checks</caption>
-        <thead><tr><th>#</th><th>Check</th><th>Result</th></tr></thead>
-        <tbody>
-          <tr><td class="mono">1</td><td><code>/</code> → <code>x-mfe-zone: shell</code></td><td><span class="badge ok">pass</span></td></tr>
-          <tr><td class="mono">2</td><td><code>/blog</code>, <code>/blog/*</code> → <code>x-mfe-zone: blog</code></td><td><span class="badge ok">pass</span></td></tr>
-          <tr><td class="mono">3</td><td><code>/docs</code>, <code>/docs/*</code> → <code>x-mfe-zone: blog</code></td><td><span class="badge ok">pass</span></td></tr>
-          <tr><td class="mono">4</td><td>an unclaimed path → the shell's 404</td><td><span class="badge ok">pass</span></td></tr>
-          <tr><td class="mono">5</td><td>child assets under <code>/vc-ap-&lt;hash&gt;/</code></td><td><span class="badge ok">pass</span> <span class="mono">vc-ap-5d190e</span></td></tr>
-          <tr><td class="mono">6</td><td><code>/components/*</code> → <code>x-mfe-zone: blog</code></td><td><span class="badge ok">pass</span></td></tr>
-          <tr><td class="mono">7</td><td><code>/horizontal</code> HTML holds both components; the Like button hydrates and counts</td><td><span class="badge ok">pass</span></td></tr>
-          <tr><td class="mono">8</td><td>a blog-only commit builds only the blog, and <code>/horizontal</code> shows the new blog build</td><td><span class="badge ok">pass</span> <span class="mono">57e241f</span></td></tr>
-          <tr><td class="mono">9</td><td>a Like in the blog's card updates the shell's header; the count survives a reload and a move between zones, and reaches a second tab</td><td><span class="badge ok">pass</span> <span class="mono">31caaea</span></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="card">
-      <h3><svg class="ic"><use href="#i-bolt"/></svg>Local toolchain results</h3>
-      <dl class="kv">
-        <dt><code>pnpm test</code></dt><dd>11 passed (routing contract incl. <code>/horizontal</code> and <code>/components/*</code>, shell proxy matcher, shared likes)</dd>
-        <dt><code>pnpm typecheck</code></dt><dd>3 packages successful</dd>
-        <dt><code>pnpm build</code></dt><dd>shell: <code>/</code>, <code>/horizontal</code> (dynamic), Proxy · blog: <code>/</code>, <code>/blog</code>, <code>/blog/[slug]</code>, <code>/components/latest-posts</code>, <code>/components/reactions</code>, <code>/docs</code>, <code>/docs/[slug]</code> (six articles), Proxy</dd>
-        <dt>Builds</dt><dd>Git deploys of each project take about 20 s; a change only under <code>apps/blog</code> builds only the blog, a change outside the apps builds both</dd>
-      </dl>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3><svg class="ic"><use href="#i-terminal"/></svg>Run the same checks locally</h3>
-    <p class="muted">Turborepo starts the shell on 3000, the blog on 3001 and the microfrontends proxy on 3024. The proxy reads <code>microfrontends.json</code> and does locally what Vercel's routing layer does in production.</p>
-<pre><code>pnpm install
-pnpm dev        # shell :3000, blog :3001, microfrontends proxy :3024
-
-curl -sI localhost:3024/        | grep x-mfe-zone   # shell
-curl -sI localhost:3024/blog    | grep x-mfe-zone   # blog
-curl -sI localhost:3024/docs    | grep x-mfe-zone   # blog
-curl -sI localhost:3024/components/reactions | grep x-mfe-zone   # blog
-open http://localhost:3024/horizontal              # needs the proxy on 3024
-
-pnpm test       # validateRouting + the shell proxy's matcher + shared likes
-pnpm typecheck
-pnpm build</code></pre>
-  </div>
-</section>
-
-<!-- ================= CHEAT SHEET ================= -->
-<section id="tab-cheatsheet" role="tabpanel" aria-labelledby="tab-btn-cheatsheet" hidden>
-  <div class="sheet-head">
-    <span class="eyebrow"><svg class="ic"><use href="#i-list"/></svg>Sheet 5 · Cheat sheet</span>
-    <h2>Eleven rules this repo follows.</h2>
-    <p class="lead">Each rule is enforced in this repo by the tests in <code>apps/shell/__tests__/</code> or was learned the hard way while deploying it (see <code>EVIDENCE.md</code>).</p>
-  </div>
-
-  <ol class="rules">
-    <li><div><b>One file, in the default app.</b> <code>microfrontends.json</code> lives in <code>apps/shell</code>. Every application is keyed by its Vercel project name and carries its <code>packageName</code>; only the default app gets <code>development.fallback</code> and no <code>routing</code> block: it owns whatever nobody else claims.</div></li>
-    <li><div><b>Children declare routing groups.</b> Each child lists <code>routing: [{ group, paths }]</code>. Paths are path-to-regexp patterns, so list both the bare path and its wildcard: <code>["/blog", "/blog/:path*"]</code>, <code>["/docs", "/docs/:path*"]</code>, <code>["/components", "/components/:path*"]</code>.</div></li>
-    <li><div><b>Routing happens before any code runs.</b> Vercel matches the path and sends the request to one project. The shell never sees <code>/blog</code> or <code>/docs</code>, and no app forwards requests to the other. <code>validateRouting</code> checks every sample path.</div></li>
-    <li class="bad"><div><b>The shell's matcher must skip <code>_next/</code>, <code>vc-ap-</code> and child paths.</b> The catch-all is <code>/((?!_next/|vc-ap-|favicon.ico|blog/|blog$|docs/|docs$|components/|components$).*)</code>. Without the exclusions the shell proxy would shadow the blog's pages and its <code>/vc-ap-5d190e/_next/…</code> assets. <code>blog/|blog$</code> rather than <code>blog</code>, so <code>/blogroll</code> would still reach the shell.</div></li>
-    <li><div><b>Wrap <code>next.config</code> with <code>withMicrofrontends</code>.</b> It reads the JSON, injects <code>MFE_CONFIG</code>, <code>NEXT_PUBLIC_MFE_CURRENT_APPLICATION</code> and the client's copy of the routing table at build time, and gives each child a hashed asset prefix <code>vc-ap-&lt;hash&gt;</code>.</div></li>
-    <li><div><b>Link across zones with the microfrontends <code>Link</code>.</b> <code>Link</code> from <code>@vercel/microfrontends/next/client</code> renders <code>next/link</code> inside a zone and a plain <code>&lt;a&gt;</code> (a full page load) into the other zone. <code>PrefetchCrossZoneLinks</code> in each layout lets the browser prefetch those pages.</div></li>
-    <li class="hobby"><div><b>Hobby = one group of two projects.</b> One microfrontends group per account, two projects per group, first two included for free. <code>create-group</code> must list the default app among <code>--project</code> too, or it answers "Default app must be one of the selected projects".</div></li>
-    <li class="hobby"><div><b>Redeploy after <code>create-group</code>.</b> Deployments built before the group existed ignore <code>microfrontends.json</code>: the shell answered 404 on <code>/docs</code> until both projects were redeployed once. Verify with <code>curl -sI $HOST/docs | grep x-mfe-zone</code>.</div></li>
-    <li><div><b>Embed from a path the child owns.</b> The blog exposes each embeddable component as a page under <code>/components/*</code>, wrapped in <code>ExposeRemoteComponent</code>; the shell renders <code>ConsumeRemoteComponent src="/components/…"</code>. A relative <code>src</code> goes through the same routing as a visitor. Both <code>next.config.ts</code> files use <code>withRemoteComponentsConfig(withMicrofrontends(config))</code>.</div></li>
-    <li><div><b>Render the host per request and guard every slot.</b> <code>/horizontal</code> sets <code>dynamic = "force-dynamic"</code>, so the shell's build never depends on the blog and a blog deployment shows on the next request. Each slot sits in an error boundary and <code>Suspense</code>: with the blog down the page still answers 200 and shows a fallback.</div></li>
-    <li><div><b>Share state through the browser, not a shared module.</b> <code>remote-components</code> shares only <code>react</code>, <code>react-dom</code> and <code>next/*</code>; every other package, a workspace one included, is bundled once per zone, so its module variables and React contexts exist twice. The like count lives in <code>localStorage</code> under <code>mfe-lite:likes</code>, with a <code>mfe-lite:likes</code> event on <code>window</code> for the current page and the browser's <code>storage</code> event for other tabs. Treat the key and event names as an API between the apps.</div></li>
-  </ol>
-
-  <div class="grid cols-3">
-    <div class="card"><h3><svg class="ic"><use href="#i-check"/></svg>validateRouting</h3><p class="muted">From <code>@vercel/microfrontends/next/testing</code>. Each sample path lands in the expected app: <code>/</code>, <code>/does-not-exist</code>, <code>/lab.html</code>, <code>/horizontal</code> in the shell; <code>/blog</code>, <code>/blog/hello-world</code>, <code>/docs</code>, <code>/docs/getting-started</code>, <code>/components/latest-posts</code>, <code>/components/reactions</code> in the blog. None of the blog's paths may fall through to the shell.</p></div>
-    <div class="card"><h3><svg class="ic"><use href="#i-check"/></svg>unstable_doesMiddlewareMatch</h3><p class="muted">From <code>next/experimental/testing/server</code>. The shell proxy's matcher runs for the shell's paths and skips <code>/blog</code>, <code>/docs</code>, <code>/components</code>, <code>/vc-ap-…</code> and <code>/_next/…</code>, but not <code>/blogroll</code>, <code>/docsify</code> or <code>/componentry</code>.</p></div>
-    <div class="card"><h3><svg class="ic"><use href="#i-check"/></svg>likes.test.ts</h3><p class="muted">Loads <code>@mfe-lite/ui/likes</code> twice with <code>vi.resetModules()</code>, as the two zones bundle it, and checks that both copies see the same count, that another tab's <code>storage</code> event is followed, that a broken stored value reads as 0, and that the copies still agree when storage is blocked.</p></div>
-  </div>
-
-  <div class="card">
-    <h3><svg class="ic"><use href="#i-link"/></svg>Learn more</h3>
-    <p class="muted">In the repo: <code>README.md</code>, <code>EVIDENCE.md</code>, <code>docs/architecture.md</code>. Vercel docs: <a href="https://vercel.com/docs/microfrontends">Microfrontends</a>.</p>
-  </div>
-</section>
-
-</div></main>
-
-<script>
-(function(){
-  'use strict';
-  const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const $ = (s, r) => (r || document).querySelector(s);
-  const sleep = ms => new Promise(r => setTimeout(r, REDUCED ? 0 : ms));
-
-  /* ---------- tabs ---------- */
-  const TABS = ['overview', 'request', 'horizontal', 'checks', 'cheatsheet'];
-  const tabButtons = [...document.querySelectorAll('nav.tabs button')];
-  function showTab(name){
-    if (!TABS.includes(name)) name = 'overview';
-    tabButtons.forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
-    TABS.forEach(t => { $('#tab-' + t).hidden = t !== name; });
-    try { history.replaceState(null, '', '#' + name); } catch (e) {}
+/** Current count in this browser; 0 on the server. */
+export function readLikes(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    return toCount(window.localStorage.getItem(LIKES_KEY));
+  } catch {
+    return toCount((window as LikesWindow)[MEMORY]);
   }
-  tabButtons.forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
-  showTab((location.hash || '').replace('#', ''));
-  addEventListener('hashchange', () => showTab((location.hash || '').replace('#', '')));
+}
 
-  /* ---------- request stepper ---------- */
-  const svg = $('#rq-svg'), packet = $('#rq-packet'), tag = $('#rq-tag'), tagText = $('#rq-tag-text');
-  const ledger = $('#rq-ledger'), badge = $('#rq-badge'), summary = $('#rq-summary'), caption = $('#rq-caption');
-  const pathSel = $('#rq-path');
-  const btnPlay = $('#rq-play'), btnStep = $('#rq-step'), btnReset = $('#rq-reset');
-  const CENTER = { browser:[80,90], domain:[260,90], routing:[475,90], table:[475,198], shell:[842,90], blog:[842,232] };
-  const ICON = { ok:'#i-check', info:'#i-route', send:'#i-send', server:'#i-server', file:'#i-file', cloud:'#i-cloud', warn:'#i-alert', bolt:'#i-bolt' };
-  const CAPTION = 'The highlighted row is the rule that matched.';
+/** Adds one like and tells every zone on this page. */
+export function addLike(): number {
+  const next = readLikes() + 1;
+  try {
+    window.localStorage.setItem(LIKES_KEY, String(next));
+  } catch {
+    (window as LikesWindow)[MEMORY] = next;
+  }
+  window.dispatchEvent(new CustomEvent(LIKES_EVENT, { detail: next }));
+  return next;
+}
 
-  function station(name){ return svg.querySelector(`.station[data-st="${name}"]`); }
-  function edge(id){ return svg.querySelector('#' + id); }
-  function hit(panel, name){ svg.querySelectorAll(`#${panel} .prow`).forEach(r => r.classList.add(r.dataset.row === name ? 'hit' : 'miss')); }
-  function setBadge(cls, text){ badge.className = 'badge ' + cls; badge.textContent = text; }
-  function row(kind, icon, title, text){
-    const d = document.createElement('div');
-    d.className = 'row ' + kind;
-    d.innerHTML = `<svg class="ic"><use href="${ICON[icon] || ICON.info}"/></svg><div><b></b><span></span></div>`;
-    d.querySelector('b').textContent = title;
-    d.querySelector('span').textContent = text;
-    if (ledger.querySelector('.empty')) ledger.innerHTML = '';
-    ledger.appendChild(d);
-    ledger.scrollTop = ledger.scrollHeight;
-  }
-  function moveTo(x, y, ms){
-    return new Promise(res => {
-      const x0 = +packet.getAttribute('cx'), y0 = +packet.getAttribute('cy');
-      if (REDUCED || !ms){ packet.setAttribute('cx', x); packet.setAttribute('cy', y); return res(); }
-      const t0 = performance.now();
-      (function f(t){
-        const p = Math.min(1, (t - t0) / ms), e = p < .5 ? 2*p*p : -1 + (4 - 2*p)*p;
-        packet.setAttribute('cx', x0 + (x - x0)*e); packet.setAttribute('cy', y0 + (y - y0)*e);
-        p < 1 ? requestAnimationFrame(f) : res();
-      })(t0);
-    });
-  }
-  function reset(){
-    svg.querySelectorAll('.station').forEach(s => s.classList.remove('active','pass','skip'));
-    svg.querySelectorAll('.edge').forEach(e => e.classList.remove('lit','blog','off'));
-    svg.querySelectorAll('.prow').forEach(r => r.classList.remove('hit','miss'));
-    packet.setAttribute('opacity','0'); packet.classList.remove('blog');
-    packet.setAttribute('cx', CENTER.browser[0]); packet.setAttribute('cy', CENTER.browser[1]);
-    tag.setAttribute('opacity','0');
-    ledger.innerHTML = '<div class="empty">The ledger fills as the dot moves. Each row is one hop and what the real code does there.</div>';
-    setBadge('dim','idle'); summary.textContent = 'Press Play to send the request.';
-    caption.textContent = CAPTION;
-  }
-  async function arrive(name, cls){
-    svg.querySelectorAll('.station.active').forEach(s => { s.classList.remove('active'); s.classList.add('pass'); });
-    const st = station(name); if (st) st.classList.add('active');
-    if (cls) packet.classList.add(cls);
-    await moveTo(CENTER[name][0], CENTER[name][1], 520);
-  }
-  function light(id, blog){ const e = edge(id); e.classList.add('lit'); if (blog) e.classList.add('blog'); }
-  const under = (path, base) => path === base || path.startsWith(base + '/');
+/** Calls onChange when the count changes here or in another tab. */
+export function subscribeLikes(onChange: () => void): () => void {
+  const onStorage = (event: Event) => {
+    const { key } = event as StorageEvent;
+    if (key === LIKES_KEY || key === null) onChange();
+  };
+  window.addEventListener(LIKES_EVENT, onChange);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener(LIKES_EVENT, onChange);
+    window.removeEventListener("storage", onStorage);
+  };
+}`,
+    client: `"use client";
 
-  function scenario(path){
-    const isBlog = under(path, '/blog'), isDocs = under(path, '/docs'), isComp = under(path, '/components');
-    const toBlog = isBlog || isDocs || isComp;
-    const missing = path === '/does-not-exist', isHorizontal = path === '/horizontal';
-    const zone = toBlog ? 'blog' : 'shell', status = missing ? 404 : 200;
-    const entry = isComp ? '/components, /components/:path*' : isDocs ? '/docs, /docs/:path*' : '/blog, /blog/:path*';
-    const tableRow = isComp ? 'components' : isDocs ? 'docs' : 'blog';
-    const url = 'https://mfe-lite-shell.vercel.app' + path;
+import { useSyncExternalStore } from "react";
+import { readLikes, subscribeLikes } from "./store";
+
+/** The shared like count. 0 on the server and during hydration. */
+export function useLikes(): number {
+  return useSyncExternalStore(subscribeLikes, readLikes, () => 0);
+}
+
+/** Header badge. Each zone renders its own; both read the same count. */
+export function LikesBadge() {
+  const likes = useLikes();
+  return <span className="badge">♥ {likes}</span>;
+}`,
+    routingTest: `const SHELL_PATHS = ["/", "/does-not-exist", "/lab.html", "/horizontal"];
+const BLOG_PATHS = ["/blog", "/blog/hello-world", "/docs", "/docs/getting-started",
+  "/components/latest-posts", "/components/reactions"];
+
+it("routes every path to the expected app", () => {
+  expect(() =>
+    validateRouting(CONFIG, { "mfe-lite-shell": SHELL_PATHS, "mfe-lite-blog": BLOG_PATHS }),
+  ).not.toThrow();
+});
+
+it("does not skip shell paths that only start like a blog path", () => {
+  expect(matches("/blogroll")).toBe(true);
+  expect(matches("/docsify")).toBe(true);
+  expect(matches("/componentry")).toBe(true);
+});`,
+    likesTest: `/** A fresh, separate copy of the module, like the one each zone bundles. */
+async function loadCopy(): Promise<Likes> {
+  vi.resetModules();
+  return import("@mfe-lite/ui/likes");
+}
+
+it("reads 0 on the server", async () => {
+  const likes = await loadCopy();
+  expect(likes.readLikes()).toBe(0);
+});
+
+// ...then, in a fake browser: two copies see the same count,
+// another tab's storage event is followed, and the copies
+// still agree when storage is blocked.`
+  };
+
+  stepper('vs', [
+    { t: 'Group the two projects', where: 'Vercel CLI, once', code: CODE.group, plain: true,
+      text: '<p>A microfrontends group puts two Vercel projects behind one domain. The shell is the <strong>default app</strong>: it gets every path nobody claims.</p><p class="muted">Deployments built before the group existed ignore the routing table, so both projects are redeployed once. Hobby allows one group with two projects.</p>' },
+    { t: 'Write the routing table', where: 'apps/shell/microfrontends.json', code: CODE.table,
+      text: '<p>One file, kept in the default app. Only the blog lists paths, as <strong>routing groups</strong>; anything not listed belongs to the shell.</p><p class="muted">List the bare path and the wildcard: <code>/blog</code> and <code>/blog/:path*</code>. Vercel reads this table on every request; it never runs app code to decide.</p>' },
+    { t: 'Wrap next.config', where: 'apps/*/next.config.ts', code: CODE.withMfe,
+      text: '<p><code>withMicrofrontends</code> reads the table when each app builds.</p><p class="muted">It gives the blog a hashed asset prefix, <code>/vc-ap-5d190e</code>, so the blog\'s files have URLs that routing can send to the blog (see C below). It also bakes a copy of the table into the client, so links know which app owns a path without asking.</p>' },
+    { t: 'Link across the apps', where: 'packages/ui/src/header.tsx', code: CODE.link,
+      text: '<p>The shared header uses the microfrontends <code>Link</code>. Inside one app it acts as <code>next/link</code>: a client-side navigation. Into the other app it renders a plain <code>&lt;a&gt;</code>: a full page load.</p><p class="muted"><code>PrefetchCrossZoneLinks</code> in each layout prefetches the other app\'s pages, so that full load is quick. Try it in D below.</p>' },
+    { t: 'Label the answer', where: 'apps/*/proxy.ts', code: CODE.shellProxy,
+      text: '<p>Optional, for checking only. Each app\'s <code>proxy.ts</code> adds <code>x-mfe-zone: shell</code> or <code>blog</code> to its responses. It decides nothing.</p><p class="muted">The shell\'s matcher skips <code>_next/</code>, <code>vc-ap-</code> and the blog\'s paths, so it only runs for the shell\'s own pages.</p>' }
+  ]);
+
+  stepper('hs', [
+    { t: 'Expose a component', where: 'apps/blog/app/components/…', zone: 'blog', code: CODE.expose,
+      text: '<p>The blog makes each shareable component a page of its own under <code>/components/&lt;name&gt;</code>, wrapped in <code>ExposeRemoteComponent</code>.</p><p class="muted"><em>Latest posts</em> is a Server Component: HTML only. <em>Reactions</em> holds a client button, so it also ships JavaScript.</p>' },
+    { t: 'Give /components to the blog', where: 'apps/shell/microfrontends.json', zone: 'blog', code: CODE.componentsGroup,
+      text: '<p>A third routing group sends <code>/components/*</code> to the blog, just like <code>/blog</code> and <code>/docs</code>.</p><p class="muted">This is the bridge: the shell reaches the blog\'s components through its own domain, with the same routing a visitor gets.</p>' },
+    { t: 'Consume it in a slot', where: 'apps/shell/app/horizontal/', zone: 'shell', code: CODE.consume,
+      text: '<p>The shell\'s page places a <code>ConsumeRemoteComponent</code> with a relative <code>src</code>. On Vercel it resolves against the production domain, so the fetch goes through the routing table to the blog.</p><p class="muted"><code>Suspense</code> shows a loading state while the card is fetched; the error boundary turns a failure into a fallback.</p>' },
+    { t: 'Render per request', where: 'export const dynamic', zone: 'shell', code: CODE.dynamic,
+      text: '<p><code>/horizontal</code> is <code>force-dynamic</code>: the shell fetches the cards on every request, never at build time.</p><p class="muted">So the shell\'s build never depends on the blog being up, and a new blog deployment shows on the next request. Try it in D below.</p>' },
+    { t: 'Enable both configs', where: 'apps/*/next.config.ts', zone: 'shell', code: CODE.configs,
+      text: '<p>Both apps wrap their config with <code>withRemoteComponentsConfig</code>, around <code>withMicrofrontends</code>.</p><p class="muted">Only <code>react</code>, <code>react-dom</code> and <code>next/*</code> are shared between host and remote. Everything else, workspace packages included, is bundled once per app.</p>' }
+  ]);
+
+  /* ---------- overview explorer ---------- */
+  const ex = $('#ex'), exBrowser = $('#ex-browser'), exBody = $('#ex-body'), exPath = $('#ex-path'), exWho = $('#ex-head-who');
+  const EX = {
+    '/': { zone: 'shell', title: 'MFE Lite', why: 'No rule claims <code>/</code>, so it goes to the default app: <strong>the shell</strong>.' },
+    '/blog': { zone: 'blog', title: 'Blog', why: '<code>/blog</code> is in the blog\'s routing group, so the whole page comes from <strong>the blog</strong>.' },
+    '/docs': { zone: 'blog', title: 'Docs', why: '<code>/docs</code> is in the blog\'s routing group, so the whole page comes from <strong>the blog</strong>.' },
+    '/horizontal': { zone: 'shell', title: 'One page, two deployments', why: 'No rule claims <code>/horizontal</code>, so it is <strong>the shell\'s</strong> page. Yet two of its cards are the blog\'s: <button class="linkish" type="button" data-ex="horizontal">look inside →</button>' }
+  };
+  let exMode = 'vertical', exPathNow = '/', exTimer = null;
+  function exKv(rows){ $('#ex-kv').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join(''); }
+  function exRender(){
+    const isV = exMode === 'vertical';
+    pressGroup($('.seg', ex), 'mode', exMode);
+    $('#ex-chips-wrap').hidden = !isV;
+    if (isV){
+      const p = EX[exPathNow];
+      exBrowser.className = 'browser z-' + p.zone;
+      exPath.textContent = exPathNow;
+      exWho.textContent = 'header · ' + p.zone;
+      exBody.innerHTML = `<div class="pg-whole swap"><div class="pg-title"></div><div class="sk w90"></div><div class="sk w70"></div><div class="sk w80"></div><div class="sk w50"></div><span class="who" style="justify-self:start">the whole page · ${p.zone}</span></div>`;
+      $('.pg-title', exBody).textContent = p.title;
+      $$('#ex-chips .chip').forEach(c => c.classList.toggle('on', c.dataset.p === exPathNow));
+      $('#ex-title').textContent = 'Vertical: the URL decides';
+      $('#ex-text').textContent = 'Vercel compares the path with microfrontends.json and sends the whole request to one app. That app renders everything: its HTML, its CSS, its JavaScript, even its own copy of the shared header.';
+      $('#ex-verdict').innerHTML = '<svg class="ic"><use href="#i-route"/></svg><span>' + p.why + '</span>';
+      exKv([['Decided by', 'Vercel routing'], ['When', 'before any app code runs'], ['Set up in', '<code>microfrontends.json</code>']]);
+    } else {
+      exBrowser.className = 'browser z-shell';
+      exPath.textContent = '/horizontal';
+      exWho.textContent = 'header · shell';
+      exBody.innerHTML = `<div class="pg-part z-shell swap"><span class="who">shell · page text</span><div class="pg-title">One page, two deployments</div><div class="sk w80"></div><div class="sk w50"></div></div>
+        <div class="pg-part slot z-blog swap" style="animation-delay:.12s"><span class="who">blog · Latest posts</span><div class="sk w70"></div><div class="sk w60"></div></div>
+        <div class="pg-part slot z-blog swap" style="animation-delay:.24s"><span class="who">blog · Reactions</span><span class="fake-btn">Like · 0</span></div>`;
+      $('#ex-title').textContent = 'Horizontal: the page decides';
+      $('#ex-text').textContent = 'Routing gave /horizontal to the shell, as usual. While rendering it, the shell\'s server asks the blog for two components and puts their HTML into its page. One response, two apps\' work.';
+      $('#ex-verdict').innerHTML = '<svg class="ic"><use href="#i-panel"/></svg><span>Dashed blue boxes are the blog\'s components, embedded in the shell\'s page. <button class="linkish" type="button" data-go="horizontal">Watch it step by step →</button></span>';
+      exKv([['Decided by', 'the shell\'s page'], ['When', 'on every request, while rendering'], ['Set up in', '<code>ExposeRemoteComponent</code> + <code>ConsumeRemoteComponent</code>']]);
+    }
+  }
+  function exStop(){ if (exTimer){ clearInterval(exTimer); exTimer = null; } }
+  $$('.seg button', ex).forEach(b => b.addEventListener('click', () => { exStop(); exMode = b.dataset.mode; exRender(); }));
+  $$('#ex-chips .chip').forEach(c => c.addEventListener('click', () => { exStop(); exPathNow = c.dataset.p; exRender(); }));
+  ex.addEventListener('click', e => {
+    const m = e.target.closest('[data-ex]'); if (m){ exStop(); exMode = m.dataset.ex; exRender(); return; }
+    const g = e.target.closest('[data-go]'); if (g){ exStop(); showTab(g.dataset.go); scrollTo(0, 0); }
+  });
+  exRender();
+  if (!REDUCED){
+    const order = Object.keys(EX);
+    exTimer = setInterval(() => { if (exMode !== 'vertical') return; exPathNow = order[(order.indexOf(exPathNow) + 1) % order.length]; exRender(); }, 2600);
+  }
+
+  /* ---------- request router ---------- */
+  const rt = { svg: $('#rt-svg'), input: $('#rt-in'), prev: $('#rt-prev'), packet: $('#rt-packet'), tag: $('#rt-tag'), hops: $('#rt-hops'), float: $('#rt-float') };
+  const ASSET_EXAMPLE = '/vc-ap-5d190e/_next/static/chunks/page.js';
+  const PAGES = {
+    shell: ['/', '/horizontal', '/lab.html'],
+    blog: ['/blog', '/blog/hello-world', '/blog/why-microfrontends', '/docs', '/docs/getting-started', '/docs/routing', '/docs/links-and-assets', '/docs/horizontal', '/docs/shared-state', '/docs/deploy', '/components/latest-posts', '/components/reactions']
+  };
+  const ROW_Y = { blog: 166, docs: 194, components: 222, assets: 250, else: 278 };
+  // Resting points sit on arrows or just outside boxes, so the dot never covers a label.
+  const AT = { browser: [150, 80], domain: [358, 80], routing: [500, 120], shell: [666, 80], blog: [666, 232] };
+  const ROW_X = 642;
+  function norm(raw){
+    let p = String(raw || '').trim().replace(/^https?:\/\/[^/]+/i, '').split(/[?#]/)[0];
+    if (!p.startsWith('/')) p = '/' + p;
+    p = p.replace(/\/{2,}/g, '/');
+    if (p.length > 1) p = p.replace(/\/$/, '');
+    return p;
+  }
+  function route(p){
+    const under = b => p === b || p.startsWith(b + '/');
+    if (under('/blog')) return { zone: 'blog', row: 'blog', rule: '/blog · /blog/:path*' };
+    if (under('/docs')) return { zone: 'blog', row: 'docs', rule: '/docs · /docs/:path*' };
+    if (under('/components')) return { zone: 'blog', row: 'components', rule: '/components · /components/:path*' };
+    if (p.startsWith('/vc-ap-5d190e/')) return { zone: 'blog', row: 'assets', rule: '/vc-ap-5d190e/…', asset: true };
+    const near = ['/blog', '/docs', '/components'].find(b => p.startsWith(b));
+    return { zone: 'shell', row: 'else', rule: null, asset: p.startsWith('/_next/'), near };
+  }
+  function answer(p, r){
+    if (r.asset){
+      if (p === ASSET_EXAMPLE) return { code: '200', line: '200 · application/javascript', note: 'a static file: no x-mfe-zone header' };
+      return { code: '200/404', line: '200 if the file exists, else 404', note: 'served from the ' + r.zone + '\'s build' };
+    }
+    const ok = PAGES[r.zone].includes(p);
+    return { code: ok ? '200' : '404', line: (ok ? '200' : '404') + ' · x-mfe-zone: ' + r.zone, note: ok ? 'rendered by the ' + r.zone : 'the ' + r.zone + '\'s own 404 page' };
+  }
+  function rtHighlight(r){
+    $$('#rt-table .prow', rt.svg).forEach(g => { g.classList.remove('hit', 'miss'); if (r) g.classList.add(g.dataset.row === r.row ? 'hit' : 'miss'); });
+  }
+  function rtPreview(){
+    const p = norm(rt.input.value), r = route(p);
+    rtHighlight(r);
+    rt.prev.className = 'rt-preview badge ' + r.zone;
+    rt.prev.textContent = '→ ' + r.zone;
+    $$('#rt-chips .chip').forEach(c => c.classList.toggle('on', c.dataset.p === p));
+  }
+  function rtResetVisual(){
+    $$('.station', rt.svg).forEach(s => s.classList.remove('active', 'skip'));
+    $$('.edge', rt.svg).forEach(e => e.classList.remove('lit', 'blog', 'off', 'cur'));
+    rt.packet.setAttribute('opacity', '0'); rt.packet.classList.remove('blog');
+    rt.packet.setAttribute('cx', AT.browser[0]); rt.packet.setAttribute('cy', AT.browser[1]);
+    rt.tag.setAttribute('opacity', '0'); rt.float.setAttribute('opacity', '0');
+    $$('li', rt.hops).forEach(li => { li.className = 'wait'; $('span:not(.n)', li).textContent = ''; });
+  }
+  const st = n => $(`.station[data-st="${n}"]`, rt.svg);
+  function activate(n){ $$('.station.active', rt.svg).forEach(s => s.classList.remove('active')); if (n) st(n).classList.add('active'); }
+  function lightEdge(id, blog){ const e = $('#' + id, rt.svg); e.classList.add('lit'); if (blog) e.classList.add('blog'); }
+  function hop(n, text, zone){
+    $$('li', rt.hops).forEach(li => { const k = +li.dataset.h; if (k < n && !li.classList.contains('na')) li.className = 'done' + (li.classList.contains('blog') ? ' blog' : ''); });
+    const li = $(`li[data-h="${n}"]`, rt.hops); li.className = 'cur' + (zone === 'blog' ? ' blog' : '');
+    $('span:not(.n)', li).innerHTML = text;
+  }
+  function toApp(zone){
+    return zone === 'blog' ? [[652, 232], AT.blog] : [[652, 80], AT.shell];
+  }
+  function rtScenario(p){
+    const r = route(p), a = answer(p, r), url = 'https://mfe-lite-shell.vercel.app' + p;
+    const html = !r.asset && a.code === '200';
+    const assetPath = r.zone === 'blog' ? '/vc-ap-5d190e/_next/static/…' : '/_next/static/…';
     const steps = [];
     steps.push(async () => {
-      packet.setAttribute('opacity','1');
-      station('browser').classList.add('active');
-      row('info','send', 'GET ' + url, 'The browser asks the shell’s domain for ' + path + '. Nothing in the URL says which project will answer.');
+      rt.packet.setAttribute('opacity', '1'); activate('browser');
+      hop(1, `<code>GET ${esc(url)}</code>. Nothing in the URL says which app will answer.`);
     });
     steps.push(async () => {
-      light('e-browser-domain'); await arrive('domain');
-      row('info','cloud', 'mfe-lite-shell.vercel.app', 'One domain. Visitors only ever talk to the shell project’s production domain; the blog project’s own domain is never used.');
+      lightEdge('rt-e1'); activate('domain'); await travel(rt.packet, [AT.browser, [254, 80], AT.domain], 520);
+      lightEdge('rt-e2'); activate('routing'); await travel(rt.packet, [AT.domain, [500, 80], AT.routing], 520);
+      hop(2, 'Visitors only ever talk to the shell\'s domain. Vercel\'s routing layer compares the path with <code>microfrontends.json</code>; no app code runs here.');
     });
     steps.push(async () => {
-      light('e-domain-routing'); await arrive('routing');
-      row('info','info', 'Vercel routing (group mfe-lite)', 'Vercel compares the path with the routing table from microfrontends.json. This layer runs no application code: it only matches paths.');
+      await travel(rt.packet, [AT.routing, [500, ROW_Y[r.row]], [ROW_X, ROW_Y[r.row]]], 520);
+      rtHighlight(r);
+      if (r.rule) hop(3, `<code>${esc(p)}</code> matches <code>${esc(r.rule)}</code>, so the request goes to <strong>the blog</strong>. The shell never sees it.`, 'blog');
+      else if (r.near) hop(3, `<code>${esc(p)}</code> starts like <code>${r.near}</code> but is not <code>${r.near}</code> or under <code>${r.near}/</code>. Patterns match whole segments, so no rule matches: it goes to the default app, <strong>the shell</strong>.`);
+      else hop(3, `No rule claims <code>${esc(p)}</code>, so it goes to the default app, <strong>the shell</strong>.`);
     });
     steps.push(async () => {
-      await moveTo(CENTER.table[0], CENTER.table[1], 350);
-      if (toBlog){ hit('rq-table', tableRow); row('blog','file', 'match: ' + entry + ' → mfe-lite-blog', path + ' is claimed by the blog, so Vercel sends the request straight to the blog project. The shell never sees it.'); }
-      else { hit('rq-table','else'); row('shell','server', 'no match → default app', 'No child claims ' + path + '. Unclaimed paths belong to the default app, mfe-lite-shell.'); }
+      $('#' + (r.zone === 'blog' ? 'rt-e3' : 'rt-e4'), rt.svg).classList.add('off');
+      st(r.zone === 'blog' ? 'shell' : 'blog').classList.add('skip');
+      lightEdge(r.zone === 'blog' ? 'rt-e4' : 'rt-e3', r.zone === 'blog');
+      if (r.zone === 'blog') rt.packet.classList.add('blog');
+      await travel(rt.packet, [[ROW_X, ROW_Y[r.row]], ...toApp(r.zone)], 520);
+      activate(r.zone);
+      $('#rt-tag-k').textContent = 'response from the ' + r.zone;
+      $('#rt-tag-a').textContent = a.line;
+      $('#rt-tag-b').textContent = a.note;
+      rt.tag.setAttribute('opacity', '1');
+      const who = r.zone === 'blog' ? 'The blog' : 'The shell';
+      if (r.asset) hop(4, `${who} serves the file from its own build. Static files carry no <code>x-mfe-zone</code>: the proxies only run for pages.`, r.zone);
+      else if (a.code === '200') hop(4, `${who} renders the page. Its <code>proxy.ts</code> adds <code>x-mfe-zone: ${r.zone}</code>, which is how curl can tell.`, r.zone);
+      else hop(4, `${who} has no page for <code>${esc(p)}</code> and answers with its own 404. Routing decides by pattern, not by whether a page exists.`, r.zone);
     });
-    if (toBlog){
-      edge('e-routing-shell').classList.add('off');
-      steps.push(async () => {
-        light('e-routing-blog', true); station('shell').classList.add('skip'); await arrive('blog','blog');
-        row('blog','file', 'apps/blog/proxy.ts · matcher /blog, /docs, /components and below', 'The blog renders ' + path + '. Its proxy makes no routing decision; it only sets x-mfe-zone: blog on the response.' + (isComp ? ' This is one of the two URLs the shell’s /horizontal page fetches on the server: a page wrapped in ExposeRemoteComponent.' : ''));
-      });
-    } else {
-      edge('e-routing-blog').classList.add('off');
-      steps.push(async () => {
-        light('e-routing-shell'); station('blog').classList.add('skip'); await arrive('shell');
-        row('shell','server', 'apps/shell/proxy.ts · catch-all matcher', 'The matcher /((?!_next/|vc-ap-|favicon.ico|blog/|blog$|docs/|docs$|components/|components$).*) matches ' + path + '. The proxy makes no routing decision; it only sets x-mfe-zone: shell. ' + (missing ? 'The shell has no page for this path, so it renders its 404 page.' : 'The shell renders the page.'));
-      });
-      if (isHorizontal) steps.push(async () => {
-        row('blog','send', 'server fetch /components/latest-posts, /components/reactions', 'While rendering, the shell asks this same domain for two blog pages. Each request goes through the routing table again, matches /components/:path* and is answered by the blog. Their HTML goes into the page’s two slots. The Horizontal sheet shows this in full.');
-      });
-    }
-    steps.push(async () => {
-      svg.querySelectorAll('.station.active').forEach(s => { s.classList.remove('active'); s.classList.add('pass'); });
-      tagText.textContent = status + ' · x-mfe-zone: ' + zone; tag.setAttribute('opacity','1');
-      row(missing ? 'warn' : 'ok', missing ? 'warn' : 'ok', status + ' · x-mfe-zone: ' + zone, toBlog
-        ? 'The HTML references /vc-ap-5d190e/_next/static/… : withMicrofrontends gives the child zone a hashed asset prefix so its files never collide with the shell’s. Those assets are served through the shell’s domain too.'
-        : isHorizontal
-          ? 'One HTML page with the shell’s text and both blog components. It references the shell’s /_next/static/… and, for the Like button, the blog’s /vc-ap-5d190e/_next/static/… files.'
-          : 'The HTML references /_next/static/… with no prefix: the default app keeps the bare asset path.');
-      setBadge(zone, status + ' · x-mfe-zone: ' + zone);
-      summary.textContent = toBlog
-        ? 'Why blog: the routing table gives ' + entry + ' to the blog project, so Vercel routed the request there before any code ran.'
-        : 'Why shell: no entry claims ' + path + ', so Vercel sent it to the default app.' + (missing ? ' The shell has no such page and answers with its 404.' : '') + (isHorizontal ? ' The page itself still contains blog content, fetched by the shell’s server.' : '');
-      caption.textContent = 'Try it: curl -sI ' + url + ' | grep x-mfe-zone → x-mfe-zone: ' + zone;
+    if (html) steps.push(async () => {
+      rt.packet.setAttribute('cx', AT.browser[0]); rt.packet.setAttribute('cy', AT.browser[1]);
+      rtHighlight(null); activate('browser');
+      rt.float.textContent = 'GET ' + assetPath; rt.float.setAttribute('opacity', '1');
+      const row = r.zone === 'blog' ? 'assets' : 'else';
+      await travel(rt.packet, [AT.browser, AT.domain, [500, 80], AT.routing, [500, ROW_Y[row]], [ROW_X, ROW_Y[row]]], 1100);
+      rtHighlight({ row });
+      await travel(rt.packet, [[ROW_X, ROW_Y[row]], ...toApp(r.zone)], 480);
+      activate(r.zone); rt.float.setAttribute('opacity', '0');
+      hop(5, r.zone === 'blog'
+        ? 'The blog\'s HTML points at <code>/vc-ap-5d190e/_next/static/…</code>. That prefix is in the table too, so its CSS and JavaScript come back from the blog, through the same domain.'
+        : 'The shell\'s HTML points at <code>/_next/static/…</code>, with no prefix. No rule claims that, so its CSS and JavaScript come from the shell, like any unclaimed path.', r.zone);
     });
+    else $('li[data-h="5"]', rt.hops).classList.add('na');
     return steps;
   }
-
-  let steps = [], i = 0, busy = false, done = false;
-  function prepare(){ reset(); steps = scenario(pathSel.value); i = 0; done = false; }
-  async function runStep(){ if (busy || i >= steps.length) return; busy = true; await steps[i++](); busy = false; if (i >= steps.length) done = true; }
-  async function play(){
-    prepare();
-    btnPlay.disabled = true;
-    while (i < steps.length){ await runStep(); if (i < steps.length) await sleep(650); }
-    btnPlay.disabled = false;
+  let rtSteps = [], rtI = 0, rtBusy = false;
+  function rtPrepare(){ rtResetVisual(); rtSteps = rtScenario(norm(rt.input.value)); rtI = 0; if (rtSteps.length < 5) $('li[data-h="5"]', rt.hops).classList.add('na'); }
+  async function rtRun(){ if (rtBusy || rtI >= rtSteps.length) return; rtBusy = true; await rtSteps[rtI++](); rtBusy = false; }
+  async function rtPlay(){
+    if (rtBusy) return;
+    rtPrepare(); $('#rt-send').disabled = true;
+    while (rtI < rtSteps.length){ await rtRun(); if (rtI < rtSteps.length) await sleep(550); }
+    $('#rt-send').disabled = false;
   }
-  btnPlay.addEventListener('click', play);
-  btnStep.addEventListener('click', async () => { if (busy) return; if (done || !steps.length) prepare(); await runStep(); });
-  btnReset.addEventListener('click', () => { steps = []; i = 0; done = false; reset(); });
-  pathSel.addEventListener('change', () => { steps = []; reset(); });
-  reset();
+  $('#rt-send').addEventListener('click', rtPlay);
+  $('#rt-step').addEventListener('click', async () => { if (rtBusy) return; if (!rtSteps.length || rtI >= rtSteps.length) rtPrepare(); await rtRun(); });
+  $('#rt-reset').addEventListener('click', () => { if (rtBusy) return; rtSteps = []; rtI = 0; rtResetVisual(); rtPreview(); });
+  rt.input.addEventListener('input', () => { if (rtBusy) return; rtSteps = []; rtResetVisual(); rtPreview(); });
+  rt.input.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); rtPlay(); } });
+  $$('#rt-chips .chip').forEach(c => c.addEventListener('click', () => { if (rtBusy) return; rt.input.value = c.dataset.p; rtSteps = []; rtResetVisual(); rtPreview(); }));
+  rtResetVisual(); rtPreview();
 
-  /* ---------- horizontal: blog up / down ---------- */
-  const hzPage = $('#hz-page'), hzUp = $('#hz-up'), hzDown = $('#hz-down'), hzNote = $('#hz-note');
-  const HZ_NOTE = {
-    up: hzNote.textContent,
-    down: 'Each slot’s error boundary caught the failed fetch: the page still answers 200 with the shell’s text and a fallback in each slot. The ♥ in the shell’s header still shows the stored count. Checked locally with the blog stopped.'
-  };
-  let hzLikes = 0;
-  $('#hz-like').addEventListener('click', () => {
-    hzLikes += 1;
-    document.querySelectorAll('.hz-count').forEach(el => { el.textContent = String(hzLikes); });
+  /* ---------- asset prefix ---------- */
+  const pf = $('#pf');
+  function pfRender(on){
+    pressGroup($('.seg', pf), 'v', on ? 'on' : 'off');
+    $('#pf-url').textContent = on ? '/vc-ap-5d190e/_next/static/…/page.js' : '/_next/static/…/page.js';
+    $('#pf-rule').innerHTML = on ? 'matches <code>/vc-ap-5d190e/…</code> → <strong>blog</strong>' : 'no rule claims <code>/_next/</code> → <strong>shell</strong>';
+    $('#pf-res').innerHTML = on ? '<span class="badge ok">200</span> the blog\'s file' : '<span class="badge bad">404</span> the shell has no such file';
+    $('#pf-b').className = 'pf-box ' + (on ? 'good' : 'shell');
+    $('#pf-c').className = 'pf-box ' + (on ? 'good' : 'bad');
+    $('#pf-text').textContent = on
+      ? 'withMicrofrontends gives the blog a hashed asset prefix. The blog\'s HTML now asks for /vc-ap-5d190e/_next/…, and the group knows that prefix belongs to the blog. The shell, as the default app, keeps the bare /_next/ path.'
+      : 'Without a prefix the blog\'s page asks for /_next/static/…, exactly like the shell\'s pages do. Routing cannot tell the two apart, so the default app gets it, and the blog\'s CSS and JavaScript never load.';
+    [$('#pf-b'), $('#pf-c')].forEach(el => { el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap'); });
+  }
+  $$('.seg button', pf).forEach(b => b.addEventListener('click', () => pfRender(b.dataset.v === 'on')));
+  pfRender(true);
+
+  /* ---------- navigation simulator ---------- */
+  const NV = { '/': { zone: 'shell', title: 'MFE Lite' }, '/blog': { zone: 'blog', title: 'Blog' }, '/docs': { zone: 'blog', title: 'Docs' }, '/horizontal': { zone: 'shell', title: 'One page, two deployments' } };
+  const nv = { browser: $('#nv-browser'), body: $('#nv-body'), path: '/', hard: 1, soft: 0, busy: false };
+  function nvBody(){
+    const p = NV[nv.path];
+    nv.body.innerHTML = `<div class="pg-whole swap"><div class="pg-title"></div><div class="sk w80"></div><div class="sk w60"></div><div class="sk w70"></div></div>`;
+    $('.pg-title', nv.body).textContent = p.title;
+    $('#nv-path').textContent = nv.path;
+    $$('#nv-nav button').forEach(b => b.setAttribute('aria-current', b.dataset.p === nv.path ? 'page' : 'false'));
+  }
+  function nvStats(){
+    $('#nv-hard').textContent = nv.hard; $('#nv-soft').textContent = nv.soft; $('#nv-app').textContent = NV[nv.path].zone;
+  }
+  function nvMsg(cls, title, text){ const m = $('#nv-msg'); m.className = 'nv-msg ' + cls; m.innerHTML = '<b></b><span class="muted"></span>'; $('b', m).textContent = title; $('span', m).innerHTML = text; }
+  async function nvGo(path){
+    if (nv.busy || path === nv.path) return;
+    const from = NV[nv.path].zone, to = NV[path].zone;
+    nv.busy = true;
+    if (from === to){
+      nv.path = path; nv.soft++; nvBody(); nvStats(); pop($('#nv-soft'));
+      nvMsg('soft', `Same app (${from} → ${to}): client-side`, `<code>Link</code> rendered <code>next/link</code>. Only the page content changed; the document, the header and the ${to}'s JavaScript stayed.`);
+    } else {
+      nv.browser.classList.add('loading', 'reload');
+      await sleep(480);
+      nv.path = path; nv.hard++;
+      nv.browser.className = 'browser z-' + to;
+      $('#nv-who').textContent = to;
+      nvBody(); nvStats(); pop($('#nv-hard')); pop($('#nv-app'));
+      nvMsg('hard', `Into the other app (${from} → ${to}): full page load`, `<code>Link</code> rendered a plain <code>&lt;a&gt;</code>, because the table baked into the client says <code>${path}</code> is the ${to}'s. The browser loaded a new document from the ${to}, with its own header and JavaScript; the ${from}'s was dropped. <code>PrefetchCrossZoneLinks</code> lets the browser fetch such pages ahead.`);
+    }
+    nv.busy = false;
+  }
+  $$('#nv-nav button').forEach(b => b.addEventListener('click', () => nvGo(b.dataset.p)));
+  $('#nv-reset').addEventListener('click', () => {
+    if (nv.busy) return;
+    Object.assign(nv, { path: '/', hard: 1, soft: 0 }); nv.browser.className = 'browser z-shell'; $('#nv-who').textContent = 'shell';
+    nvBody(); nvStats();
+    nvMsg('', 'Start on the shell\'s home page.', 'Try Horizontal (same app), then Blog (the other app), then Docs.');
   });
-  function setBlog(state){
-    hzPage.dataset.blog = state;
-    hzUp.setAttribute('aria-pressed', String(state === 'up')); hzUp.classList.toggle('primary', state === 'up');
-    hzDown.setAttribute('aria-pressed', String(state === 'down')); hzDown.classList.toggle('primary', state === 'down');
-    hzNote.textContent = HZ_NOTE[state];
+  nvBody(); nvStats();
+
+  /* ---------- horizontal: assemble /horizontal ---------- */
+  const as = { svg: $('#as-svg'), browser: $('#as-browser'), packet: $('#as-packet'), step: 0, busy: false, up: true, likes: 0 };
+  const AS_PTS = {
+    'as-e1': [[94, 100], [324, 100]], 'as-e2': [[336, 132], [564, 132]], 'as-e3': [[576, 156], [620, 156], [620, 184], [580, 184]],
+    'as-e4': [[564, 214], [336, 214]], 'as-e5a': [[336, 244], [804, 244]], 'as-e5b': [[806, 274], [576, 274]],
+    'as-e6': [[564, 306], [96, 306]], 'as-e7': [[94, 344], [804, 344]]
+  };
+  const AS_STEP_EDGES = [[], ['as-e1'], ['as-e2'], ['as-e3'], ['as-e4'], ['as-e5a', 'as-e5b'], ['as-e6'], ['as-e7']];
+  const AS_BLUE = new Set(['as-e5a', 'as-e5b', 'as-e7']);
+  const AS_TEXT = [
+    { t: 'Ready', x: 'Press Play, or Step through it. The mock page on the left shows what exists at each moment.' },
+    { t: 'The browser asks for /horizontal', x: 'An ordinary page request to the one domain. Nothing about it is special yet.' },
+    { t: 'Routing gives it to the shell', x: 'No rule claims /horizontal, so the default app gets it. As far as routing is concerned, this is a shell page like any other.' },
+    { t: 'The shell renders its own part', x: 'Header, title and text come from the shell. Each card is a ConsumeRemoteComponent inside Suspense, so for now each slot is a loading placeholder.' },
+    { t: 'The shell\'s server fetches the cards', x: 'src="/components/latest-posts" is relative. On Vercel it resolves to https://mfe-lite-shell.vercel.app/components/…, so the shell asks its own domain, twice, like a visitor would.' },
+    { up: { t: 'Routing sends them to the blog', x: '/components/:path* is the blog\'s. The blog renders each page wrapped in ExposeRemoteComponent and returns the component\'s HTML, with links to its own CSS and JavaScript.' },
+      down: { t: 'The blog is down', x: 'Routing still sends /components/* to the blog, but nothing answers. The fetch fails inside each slot, and only inside that slot.' } },
+    { up: { t: 'One HTML page arrives', x: 'Shell text and both cards in one response. Each card sits in an open Shadow DOM with the blog\'s stylesheet, so the two apps\' CSS never mix. It works without JavaScript; the Like button is there but not live yet. Try it.' },
+      down: { t: 'The page still answers 200', x: 'Each slot\'s error boundary caught its failure and shows a fallback. The shell\'s header and text are untouched: the blog cannot take the shell\'s page down.' } },
+    { up: { t: 'The blog\'s JavaScript wakes the button', x: 'The browser loads the blog\'s files from /vc-ap-5d190e/_next/…, which routing sends to the blog. React itself is shared, so the button hydrates inside the shell\'s React tree. Press Like: the ♥ in the shell\'s header follows.' },
+      down: { t: 'Nothing to wake up', x: 'No card, so no blog JavaScript to load. The shell\'s own page works as usual.' } }
+  ];
+  function asSlot(state){ ['#as-s1', '#as-s2'].forEach(s => { $(s).dataset.state = state; }); }
+  function asRender(){
+    const k = as.step, up = as.up;
+    AS_STEP_EDGES.forEach((ids, n) => ids.forEach(id => {
+      const e = $('#' + id, as.svg);
+      e.classList.remove('lit', 'blog', 'off', 'cur', 'fail');
+      if (n > k) e.classList.add('off');
+      else {
+        if (!up && n >= 5 && id !== 'as-e5a' && id !== 'as-e6'){ e.classList.add(n === 7 ? 'off' : 'fail'); return; }
+        e.classList.add('lit'); if (AS_BLUE.has(id)) e.classList.add('blog');
+        if (n === k) e.classList.add('cur');
+      }
+    }));
+    $('#as-x').setAttribute('opacity', !up && k >= 5 ? '1' : '0');
+    $('#as-e5b-t').textContent = !up && k >= 5 ? 'no answer: the fetch fails' : 'the components\' HTML';
+    $('#as-blog-st').classList.toggle('down', !up);
+    $('#as-blog-sub').textContent = up ? '/components/*' : 'down';
+    // mock page
+    const blank = $('#as-blank'), where = $('#as-where'), status = $('#as-status');
+    blank.hidden = k >= 3; $('#as-spin').hidden = k === 0;
+    $('#as-blank-t').textContent = k === 0 ? 'Press Play.' : 'Waiting for the server…';
+    where.className = 'as-where' + (k >= 6 ? ' client' : k >= 3 ? ' server' : '');
+    $('span', where).textContent = k >= 6 ? 'in the browser' : k >= 3 ? 'being built on the shell\'s server' : k ? 'request on its way' : 'nothing yet';
+    status.className = 'b-status' + (k >= 6 ? ' ok' : '');
+    status.textContent = k >= 6 ? '200' : k ? '…' : 'idle';
+    let slot = 'loading';
+    if (k === 4) slot = 'fetching';
+    if (k >= 5) slot = up ? 'filled' : (k === 5 ? 'error' : 'fallback');
+    asSlot(slot);
+    $$('.as-slot .tagline').forEach(t => { t.textContent = slot === 'fetching' ? 'GET /components/… via routing' : slot === 'error' ? 'fetch failed' : 'Suspense fallback'; });
+    const like = $('#as-like'), live = up && k >= 7;
+    like.classList.toggle('inert', !live); like.classList.toggle('live', live);
+    if (live) $('#as-hint').textContent = '';
+    // caption
+    const txt = AS_TEXT[k].t ? AS_TEXT[k] : AS_TEXT[k][up ? 'up' : 'down'];
+    $('#as-title').textContent = txt.t; $('#as-text').textContent = txt.x;
+    $('#as-num').textContent = 'Step ' + k + ' of 7';
+    $$('#as-prog i').forEach((i, n) => { i.className = n < k ? 'on' + (n === 4 || n === 6 ? ' b' : '') + (!up && n >= 4 && n !== 5 ? ' x' : '') : ''; });
+    $('#as-step').disabled = k >= 7;
   }
-  hzUp.addEventListener('click', () => setBlog('up'));
-  hzDown.addEventListener('click', () => setBlog('down'));
+  async function asNext(){
+    if (as.busy || as.step >= 7) return;
+    as.busy = true; as.step++; asRender();
+    const ids = AS_STEP_EDGES[as.step];
+    for (const id of ids){
+      if (!as.up && id === 'as-e5b') break;
+      if (!as.up && id === 'as-e7') break;
+      as.packet.classList.toggle('blog', AS_BLUE.has(id));
+      await travel(as.packet, AS_PTS[id], id === 'as-e5a' || id === 'as-e7' ? 700 : 480);
+    }
+    as.packet.setAttribute('opacity', as.step >= 7 ? '0' : as.packet.getAttribute('opacity'));
+    as.busy = false;
+  }
+  async function asPlay(){
+    if (as.busy) return;
+    as.step = 0; asRender(); $('#as-play').disabled = true;
+    while (as.step < 7){ await asNext(); await sleep(as.step === 6 ? 1300 : 750); }
+    $('#as-play').disabled = false;
+  }
+  function asReset(){ if (as.busy) return; as.step = 0; as.packet.setAttribute('opacity', '0'); $('#as-hint').textContent = ''; asRender(); }
+  $('#as-play').addEventListener('click', asPlay);
+  $('#as-step').addEventListener('click', asNext);
+  $('#as-reset').addEventListener('click', asReset);
+  $$('.blogseg button').forEach(b => b.addEventListener('click', () => { if (as.busy) return; as.up = b.dataset.v === 'up'; pressGroup($('.blogseg'), 'v', b.dataset.v); asRender(); }));
+  $('#as-xray').addEventListener('click', e => { const on = as.browser.dataset.xray !== 'true'; as.browser.dataset.xray = String(on); e.currentTarget.setAttribute('aria-pressed', String(on)); e.currentTarget.classList.toggle('primary', on); });
+  $('#as-like').addEventListener('click', () => {
+    if (!(as.up && as.step >= 7)){ $('#as-hint').textContent = 'Not live yet: the blog\'s JavaScript has not loaded.'; return; }
+    as.likes++; $('#as-like-n').textContent = as.likes; $('#as-heart').textContent = as.likes; pop($('#as-heart').parentElement);
+  });
+  asRender();
+
+  /* ---------- shared state ---------- */
+  const ss = { svg: $('#ss-svg'), dot: $('#ss-dot'), dot2: $('#ss-dot2'), mode: 'contract', count: 0, blogVar: 0, busy: false };
+  function ssRender(){
+    const c = ss.mode === 'contract';
+    pressGroup($('.fig-bar .seg'), 'v', ss.mode);
+    $$('.ss-on', ss.svg).forEach(el => el.classList.toggle('ss-off', !c));
+    $('#ss-cut').setAttribute('opacity', c ? '0' : '1');
+    $('#ss-btn-n').textContent = c ? ss.count : ss.blogVar;
+    $('#ss-store-n').textContent = ss.count;
+    $('#ss-badge-n').textContent = c ? ss.count : 0;
+    $('#ss-tab-n').textContent = ss.count;
+    $('#ss-bcopy-t').textContent = c ? 'addLike() writes, then fires the event' : 'let count = ' + ss.blogVar + '   (its own variable)';
+    $('#ss-scopy-t').textContent = c ? 'useLikes() listens, re-reads' : 'let count = 0   (a second variable)';
+    const note = $('#ss-note');
+    note.className = 'ss-note' + (c ? '' : ' bad');
+    note.innerHTML = c
+      ? '<b>What MFE Lite does.</b><span class="muted"><code>addLike()</code> writes <code>mfe-lite:likes</code> to localStorage and fires a <code>mfe-lite:likes</code> event on <code>window</code>. The shell\'s copy listens for that event and re-reads storage, so the header updates on the same page. Other tabs get the browser\'s own <code>storage</code> event. A reload, or a full page load into the other app, reads the same storage.</span>'
+      : '<b>What would break.</b><span class="muted">Each app bundles its own copy of <code>@mfe-lite/ui/likes</code>, so a module variable exists twice: the blog\'s button counts in its copy, and the shell\'s header reads the other copy, which stays at 0. A React context would split the same way. That is why the count goes through the browser.</span>';
+  }
+  function flash(id){ const el = $('#' + id, ss.svg); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), REDUCED ? 0 : 450); }
+  async function ssLike(){
+    if (ss.busy) return; ss.busy = true;
+    const c = ss.mode === 'contract';
+    await travel(ss.dot, [[155, 104], [155, 128]], 260);
+    flash('ss-bcopy');
+    if (!c){
+      ss.blogVar++; ssRender(); pop($('#ss-btn-n').parentNode);
+      await travel(ss.dot, [[270, 155], [584, 155]], 520);
+      ss.dot.setAttribute('opacity', '0'); ss.busy = false; return;
+    }
+    await travel(ss.dot, [[270, 155], [305, 155], [305, 87], [340, 87]], 420);
+    ss.count++; $('#ss-store-n').textContent = ss.count; flash('ss-store');
+    await travel(ss.dot, [[480, 112], [480, 130]], 200);
+    flash('ss-event'); const rp = $('#ss-ripple'); rp.classList.remove('go'); void rp.getBoundingClientRect(); rp.classList.add('go');
+    $('#ss-btn-n').textContent = ss.count; pop($('#ss-btn-n').parentNode);
+    await Promise.all([
+      travel(ss.dot, [[560, 155], [630, 155]], 320).then(() => { flash('ss-scopy'); return travel(ss.dot, [[745, 128], [745, 104]], 220); })
+        .then(() => { $('#ss-badge-n').textContent = ss.count; pop($('#ss-badge-n').parentNode); }),
+      travel(ss.dot2, [[360, 112], [360, 250]], 620).then(() => { $('#ss-tab-n').textContent = ss.count; pop($('#ss-tab-n').parentNode); })
+    ]);
+    ss.dot.setAttribute('opacity', '0'); ss.dot2.setAttribute('opacity', '0');
+    ss.busy = false;
+  }
+  $('#ss-like').addEventListener('click', ssLike);
+  $('#ss-btn').addEventListener('click', ssLike);
+  $('#ss-btn').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); ssLike(); } });
+  $$('.fig-bar .seg button').forEach(b => b.addEventListener('click', () => { if (ss.busy) return; ss.mode = b.dataset.v; ss.blogVar = 0; ssRender(); }));
+  $('#ss-reset').addEventListener('click', () => { if (ss.busy) return; ss.count = 0; ss.blogVar = 0; ssRender(); });
+  ssRender();
+
+  /* ---------- deploy the blog alone ---------- */
+  const dp = { busy: false, done: false };
+  function dpReset(){
+    if (dp.busy) return; dp.done = false;
+    $('#dp-shell').className = 'dp-card z-shell'; $('#dp-blog').className = 'dp-card z-blog';
+    $('#dp-shell-s').innerHTML = 'live · <span class="ver">v1</span>'; $('#dp-blog-s').innerHTML = 'live · <span class="ver">v1</span>';
+    $('#dp-v-ver').className = 'ver'; $('#dp-v-ver').textContent = 'v1';
+    $('#dp-h-ver').className = 'ver'; $('#dp-h-ver').textContent = 'v1'; $('#dp-h-new').hidden = true;
+    $('#dp-text').textContent = 'Both projects are live. Each builds only its own app.';
+    $('#dp-push').disabled = false;
+  }
+  $('#dp-push').addEventListener('click', async () => {
+    if (dp.busy || dp.done) return; dp.busy = true; $('#dp-push').disabled = true;
+    $('#dp-shell').classList.add('skip'); $('#dp-shell-s').innerHTML = 'skipped: not affected · <span class="ver">v1</span>';
+    $('#dp-blog').classList.add('building'); $('#dp-blog-s').textContent = 'building…';
+    $('#dp-text').textContent = 'Vercel sees that the change only touches apps/blog. The shell skips this push; only the blog builds.';
+    await sleep(1650);
+    $('#dp-blog').classList.remove('building'); $('#dp-blog-s').innerHTML = 'live · <span class="ver new">v2</span>';
+    for (const [id, card] of [['dp-v-ver', 'dp-v'], ['dp-h-ver', 'dp-h']]){
+      await sleep(350);
+      const v = $('#' + id); v.className = 'ver new'; v.textContent = 'v2';
+      const el = $('#' + card); el.classList.remove('flash-new'); void el.offsetWidth; el.classList.add('flash-new');
+    }
+    $('#dp-h-new').hidden = false;
+    $('#dp-text').textContent = 'The next request to /blog gets the new blog. So does /horizontal: the shell renders it per request, so it fetches the blog\'s new card without being rebuilt. The shell\'s own text is still v1.';
+    dp.busy = false; dp.done = true;
+  });
+  $('#dp-reset').addEventListener('click', dpReset);
+
+  /* ---------- setup: file explorer ---------- */
+  const FILES = [
+    { dir: 'apps/shell', name: 'microfrontends.json', tags: 'vh', code: CODE.tableFull, role: 'The routing table. Vercel reads it on every request; <code>withMicrofrontends</code> reads it at build time. The blog claims <code>/blog</code>, <code>/docs</code> and <code>/components</code>; the shell, the default app, gets everything else. The <code>development</code> ports and <code>localProxyPort</code> are for <code>pnpm dev</code>.' },
+    { dir: 'apps/shell', name: 'next.config.ts', tags: 'vh', code: CODE.configs, role: '<code>withMicrofrontends</code> (vertical) inside <code>withRemoteComponentsConfig</code> (horizontal). The shell, as the default app, keeps the bare <code>/_next/</code> asset path.' },
+    { dir: 'apps/shell', name: 'proxy.ts', tags: 'v', code: CODE.shellProxy, role: 'Stamps <code>x-mfe-zone: shell</code> on the shell\'s responses. It decides nothing; its matcher keeps it off the blog\'s paths and files.' },
+    { dir: 'apps/shell', name: 'app/layout.tsx', tags: 'v', code: CODE.layout, role: 'Renders the shared header and <code>PrefetchCrossZoneLinks</code>, which prefetches the pages that cross-app links point to. The blog\'s layout is the same with <code>zone="blog"</code>.' },
+    { dir: 'apps/shell', name: 'app/horizontal/page.tsx', tags: 'h', code: CODE.page, role: 'The host page. <code>force-dynamic</code>, its own text, and two slots pointing at the blog\'s <code>/components/…</code> pages.' },
+    { dir: 'apps/shell', name: 'app/horizontal/remote-slot.tsx', tags: 'h', code: CODE.slot, role: 'One embedded component: <code>ConsumeRemoteComponent</code> inside <code>Suspense</code> (loading state) inside <code>SlotBoundary</code> (failure fallback).' },
+    { dir: 'apps/shell', name: 'app/horizontal/slot-boundary.tsx', tags: 'h', code: CODE.boundary, role: 'A client error boundary. If a card fails, only that slot shows a fallback; the page still answers 200.' },
+    { dir: 'apps/shell', name: '__tests__/routing.test.ts', tags: 'v', code: CODE.routingTest, role: '<code>validateRouting</code> checks that each sample path lands in the expected app, and <code>unstable_doesMiddlewareMatch</code> checks the shell proxy\'s matcher, including <code>/blogroll</code>.' },
+    { dir: 'apps/shell', name: '__tests__/likes.test.ts', tags: 's', code: CODE.likesTest, role: 'Loads <code>@mfe-lite/ui/likes</code> twice, as the two apps bundle it, and checks that both copies agree through the browser.' },
+    { dir: 'apps/blog', name: 'next.config.ts', tags: 'vh', code: CODE.configs, role: 'The same wrappers. Here <code>withMicrofrontends</code> finds the table in the default app and gives the blog its <code>/vc-ap-5d190e</code> asset prefix.' },
+    { dir: 'apps/blog', name: 'proxy.ts', tags: 'v', code: CODE.blogProxy, role: 'Stamps <code>x-mfe-zone: blog</code> on the blog\'s pages. Its matcher lists exactly the paths the table gives the blog.' },
+    { dir: 'apps/blog', name: 'app/components/latest-posts/page.tsx', tags: 'h', code: CODE.latest, role: 'An exposed Server Component: rendered by the blog, embedded by the shell, no client JavaScript. Its links are plain <code>&lt;a&gt;</code>.' },
+    { dir: 'apps/blog', name: 'app/components/reactions/page.tsx', tags: 'h', code: CODE.expose, role: 'An exposed component holding a client button, so the blog\'s JavaScript loads on the shell\'s page to hydrate it.' },
+    { dir: 'apps/blog', name: 'app/components/reactions/reactions.tsx', tags: 'hs', code: CODE.reactions, role: 'The Like button. It calls <code>addLike()</code> from its own copy of the likes code; the count lives in the browser.' },
+    { dir: 'packages/ui', name: 'src/header.tsx', tags: 'vs', code: CODE.header, role: 'The shared header, rendered by each app. Its links use the microfrontends <code>Link</code>; <code>LikesBadge</code> shows the shared count.' },
+    { dir: 'packages/ui', name: 'src/likes/store.ts', tags: 's', code: CODE.store, role: 'The browser contract: a localStorage key, a <code>window</code> event and the browser\'s <code>storage</code> event. Excerpt.' },
+    { dir: 'packages/ui', name: 'src/likes/client.tsx', tags: 's', code: CODE.client, role: '<code>useLikes</code> subscribes to the contract with <code>useSyncExternalStore</code>; 0 on the server.' }
+  ];
+  const TAGNAME = { v: 'vertical', h: 'horizontal', s: 'shared state' };
+  const tree = $('#fx-tree'), fpanel = $('#fx-panel');
+  let fxSel = 0, fxFilter = 'all';
+  function tagHtml(tags){ return '<span class="tg">' + [...tags].map(t => `<i class="${t}" title="${TAGNAME[t]}">${t.toUpperCase()}</i>`).join('') + '</span>'; }
+  function fxRender(){
+    let html = '', last = '';
+    FILES.forEach((f, i) => {
+      if (f.dir !== last){ html += `<div class="dir">${f.dir}/</div>`; last = f.dir; }
+      const dim = fxFilter !== 'all' && !f.tags.includes(fxFilter);
+      html += `<button type="button" role="option" data-i="${i}" aria-selected="${i === fxSel}" class="${dim ? 'dim' : ''}"><span class="fn">${esc(f.name)}</span>${tagHtml(f.tags)}</button>`;
+    });
+    tree.innerHTML = html;
+    const f = FILES[fxSel];
+    fpanel.innerHTML = `<div class="bar-row"><span class="path"></span><span class="spacer"></span>${tagHtml(f.tags)}</div><p class="swap" style="font-size:.92rem">${f.role}</p><pre class="swap"><code>${hl(f.code)}</code></pre>`;
+    $('.path', fpanel).textContent = f.dir + '/' + f.name;
+  }
+  tree.addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (!b) return; fxSel = +b.dataset.i; fxRender(); });
+  $$('#fx-filter button').forEach(b => b.addEventListener('click', () => {
+    fxFilter = b.dataset.f; pressGroup($('#fx-filter'), 'f', fxFilter);
+    if (fxFilter !== 'all' && !FILES[fxSel].tags.includes(fxFilter)) fxSel = FILES.findIndex(f => f.tags.includes(fxFilter));
+    fxRender();
+  }));
+  fxRender();
+
+  showTab((location.hash || '').slice(1));
 })();
 </script>
 </body>
