@@ -422,3 +422,48 @@ In a browser, starting from a saved count of 8:
 | 5 | header Home → `/` (shell zone) | 13 |
 
 No console errors. The count stays per browser and per origin; a count shared by every visitor needs server-side storage.
+
+## Theory in the docs and the lab: two splits, shared state (2026-11-22)
+
+Commit `31f32f9` changed documentation only: the lab (`apps/shell/public/lab.html`), two new `/docs` articles in the blog
+(`two-splits` and `state`), `README.md` and `docs/architecture.md`. No app code changed.
+
+```
+$ pnpm test      → 12 passed (routing ×5, likes ×7)
+$ pnpm typecheck → 3 packages successful
+$ pnpm build     → the blog prerenders 8 docs articles (was 6); other routes as before
+```
+
+The commit touched both apps and files at the repo root, so both projects built (Production READY in 21 s for the shell and
+23 s for the blog). On https://mfe-lite-shell.vercel.app:
+
+```
+/, /horizontal, /lab.html                                        200, x-mfe-zone: shell
+/blog, /blog/hello-world, /docs,
+/docs/getting-started, /docs/two-splits, /docs/routing,
+/docs/links-and-assets, /docs/horizontal, /docs/state,
+/docs/shared-state, /docs/deploy,
+/components/latest-posts, /components/reactions                  200, x-mfe-zone: blog
+/does-not-exist                                                  404, x-mfe-zone: shell
+
+/docs lists 8 articles; /docs/state is "Docs · 06 of 08"
+/horizontal HTML: data-remote="latest-posts" and data-remote="reactions", as before
+/lab.html: 5 tabs (Overview, Vertical, Horizontal, State, Setup); Setup lists 8 rules
+```
+
+The lab, driven in headless Chrome on production:
+
+| # | Step | Result |
+|---|---|---|
+| 1 | Overview, "Which one do you need?": Vertical zone, Ship a change | shell `skipped · v1`, blog `live · v2`, "Only the blog builds" |
+| 2 | the same block: Remote component, then its "See Horizontal" link | the Horizontal sheet opens |
+| 3 | State, part A: "A page of the blog", Send | Memory does not arrive; URL, browser storage, cookie and server do |
+| 4 | State, part A: "The blog's card on this page", Send | all five arrive; Memory "only via one shared module" |
+| 5 | State, part A: "Another visitor's browser", Send | only Server arrives |
+| 6 | State, part B: the fifth case | its panel names Memory, and the Memory row lights up in the figure |
+| 7 | that case's "Horizontal, part C" link | Horizontal opens at "One Like, two apps" |
+| 8 | old link `#request`; new links `#shared-state` and `#choose` | Vertical, State and Overview open |
+
+On `/horizontal`, from an empty browser profile: the blog's Like button reports `data-store="shell"`, and two clicks take the
+button, the header pill and the saved count to 2. No script errors. The only console entry is a 404 for `/favicon.ico`, which
+this repo does not ship.
