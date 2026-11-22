@@ -10,7 +10,45 @@ The demo shows both ways of splitting a frontend:
 - **Vertical**: each path belongs to one app. `/blog` and `/docs` are whole pages from the blog; `/` is a whole page from the shell.
 - **Horizontal**: one page holds pieces from both apps. The shell's `/horizontal` embeds two components that the blog builds and deploys.
 
-Across both, the two apps share one piece of state, a like count, through the browser rather than through code.
+On `/horizontal` the two apps also share one piece of state, a like count, through one React context; between pages the count is
+saved in the browser.
+
+## The two splits, in theory
+
+Three questions describe any way of splitting a frontend: where it is composed, what the apps share at run time, and whom it fits.
+
+| | Vertical (multi-zone) | Horizontal (remote components) |
+|---|---|---|
+| Split by | URL: each path belongs to one app, which returns the whole document | Component: a host app's page has slots that another app (the remote) renders and deploys |
+| Composed | In front of the apps, by a router that picks one app per request. On Vercel: the microfrontends routing layer. Elsewhere: a reverse proxy or rewrites | Inside the page. On the server: the host fetches the remote's HTML and sends one page (`remote-components`). Or in the browser: modules loaded at run time (Module Federation, Web Components) |
+| Shared at run time | Only the domain, so cookies and browser storage. Code is shared at build time, through packages. No memory | One document and one runtime: the DOM, React, and every module both apps list as shared. That list is a contract between two deployments |
+| The boundary | A navigation: entering the other app is a full page load | Inside the page: no load, but every slot needs a fallback for when the remote is down |
+| Fits | A team that owns a whole section: marketing, docs, a dashboard, checkout | A piece that sits on other teams' pages and must change without their redeploy: a header for many apps, a cart, recommendations |
+| Strengths | Strong isolation; simple to reason about and to debug; each team ships on its own schedule | The piece updates everywhere as soon as the remote deploys; state can be shared on the page |
+| Costs | A full page load at the boundary; a shared header can briefly differ in version between zones; a page cannot mix several teams' pieces | More JavaScript on the page; two running apps depend on each other; harder to debug; `remote-components` is still 0.x |
+| In MFE Lite | `/blog` and `/docs` belong to the blog, every other path to the shell | The shell's `/horizontal` holds two blog components |
+
+Drawing a vertical boundary: follow distinct audiences or journeys, the owning team, the need to deploy alone, and sign-in
+requirements. Keep pages that are visited together in one zone, because every crossing is a full page load.
+
+Two questions that come up about the horizontal split. Module Federation: the Next.js plugin (`nextjs-mf`) is in
+maintenance mode and does not support the App Router, so on current Next.js the horizontal route is `remote-components`. iframes: each
+frame is a separate page, with no server-rendered HTML in the host page, and height, styles, focus and navigation all stay apart.
+
+### Three ways to share a piece of UI
+
+| | Workspace package | Vertical zone | Remote component |
+|---|---|---|---|
+| What is shared | Source code, at build time | A domain, routed by path | A page and its runtime |
+| A change goes live when | Every app that uses it redeploys | That zone deploys | The remote deploys; hosts stay as they are |
+| Cost at run time | None | A full page load at the zone's edge | More JavaScript, and two running apps that depend on each other |
+| Use it for | A design system, a header, helpers | A section with its own team | A piece that sits on many teams' pages |
+| In MFE Lite | `packages/ui`: the header, `Link`, the badges | `/blog` and `/docs` | The two cards on `/horizontal` |
+
+Take the first of the three that gives the independence you need. That is also Vercel's guidance: start vertical, share code
+through workspace packages, and reach for horizontal only when a piece must update without redeploying the pages that show it.
+A package in one monorepo is enough for a shared header; a remote component earns its cost when the header serves apps in several
+repositories, when three or more teams build one page, or when the hosts must not redeploy.
 
 ## Request flow
 
@@ -62,7 +100,55 @@ browser ◀── one HTML page: the shell's text + both blog components ── 
   and the next request to `/horizontal` shows the new blog build (recorded in `EVIDENCE.md`).
 - **Old assets.** Right after a blog deployment, the blog chunk URLs referenced by the previous version of the page still answered 200.
 
+## Where shared state can live
+
+A move between two zones is a full page load, and a page load discards everything in memory. So the first question about any
+value two apps share is where it is kept. There are five places.
+
+| Kept in | Does it cross a zone boundary? | Good for |
+|---|---|---|
+| Memory: React state, context, module variables | **No.** It ends with the page; the next page starts empty | Live UI on one page |
+| The URL: path and query | Yes. It travels with every link; every zone's server and client can read it | Filters, selection, deep links |
+| Browser storage: `localStorage`, IndexedDB | Yes. All zones are one origin. Only client code can read it | Preferences, drafts |
+| A cookie on the shared domain | Yes. The browser sends it with every request, so every zone's server reads it | Session, language, theme |
+| A server: an API in front of a database | Yes. Any zone, any device, any visitor | The source of truth |
+
+- The URL is public: nothing sensitive goes there.
+- A server cannot read browser storage, so server-rendered HTML does not contain a value kept only there.
+- A cookie travels with every request, so it has to stay small.
+- Every zone answers on one domain, so for cookies and browser storage the zones are one origin.
+- Browser storage and cookies stay in the browser that wrote them. Only a server reaches another device or another visitor.
+
+The two splits differ in the first row. Between zones (vertical), memory never crosses. On one page (horizontal), two apps run in
+one runtime and can share memory, but only through a module both load as one copy; if each app bundles its own copy there are two
+contexts and neither sees the other. The next section shows this in MFE Lite.
+
+Four principles: share as little as possible; give every piece of state one owner; reach for the URL, a cookie or a server before
+shared memory; treat anything shared as a public API between two deployments.
+
+### State cases in practice
+
+For each case ask where the truth lives, and how each app gets it.
+
+| Case | Keep the truth in | How each app gets it |
+|---|---|---|
+| Who is signed in | A session cookie on the shared domain | Every zone checks the session itself, through one shared auth package. Each app's proxy sees only its own paths, so no zone can rely on another to have checked |
+| Cart or notification count in the header | A server API that one team owns | Each zone's header calls the API, while rendering on the server or from the browser. No zone reads another team's database |
+| Theme, language, consent | A cookie | Each zone's server reads it and renders the right HTML the first time. Kept only in `localStorage`, the page would flash |
+| Filters, search, the selected item | The URL | Links carry it between zones; nothing to synchronise, the Back button works, and the link can be sent to someone else |
+| Two widgets on one page that react to each other | Memory: one shared context, or a browser event | Both apps load one copy of the module, or agree on the event's name and payload. Only the horizontal split has this case |
+
+The sign-in row follows Vercel's microfrontends documentation. The other rows are common practice, not something this demo
+tests: MFE Lite has no sign-in and no server store, and implements only the last row.
+
+Three things to avoid: `localStorage` as the main channel between apps; one global store that every app reads and writes, which
+ties their releases together again; one zone reading another team's database instead of calling its API.
+
+The rule behind every case: decide where the truth lives first, then how each page gets a copy.
+
 ## Shared state
+
+MFE Lite's own case is the last row above: a Like button built by the blog and a count shown by the shell, on one page.
 
 ```
 /horizontal (one React tree, two deployments)

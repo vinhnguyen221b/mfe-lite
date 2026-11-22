@@ -45,6 +45,52 @@ export const DOCS: Doc[] = [
     ],
   },
   {
+    slug: "two-splits",
+    title: "Two ways to split a frontend",
+    summary: "Vertical and horizontal in theory: how each is composed, what the apps share, whom it fits, and how to choose.",
+    blocks: [
+      {
+        p: "Three questions describe any way of splitting a frontend between teams: where it is composed, what the apps share at run time, and whom it fits. MFE Lite shows both splits; this page is the theory behind them.",
+      },
+      { h: "Vertical: every page has one owner" },
+      {
+        list: [
+          "Composed in front of the apps. A router picks one app for each request, by path, and that app returns the whole document. On Vercel the router is the microfrontends routing layer.",
+          "Shared at run time: only the domain, so cookies and browser storage. Code is shared at build time, through packages. Memory is not shared at all.",
+          "The boundary is a navigation: a link into the other app is a full page load.",
+          "It fits teams that own whole sections of a site: marketing, docs, a dashboard, checkout.",
+        ],
+      },
+      {
+        p: "In MFE Lite: `/blog` and `/docs` belong to this blog project, and every other path belongs to the shell. The next two articles show how.",
+      },
+      { h: "Horizontal: one page, several owners" },
+      {
+        list: [
+          "Composed inside the page. A host page leaves slots, and another app renders the component for each slot and deploys it on its own.",
+          "Shared at run time: one document and one runtime. That means React, plus every module both apps list as shared, and that list is a contract between two deployments.",
+          "The boundary is inside the page: nothing reloads, but every slot needs a fallback for when the other app is down.",
+          "It fits a piece that sits on other teams' pages and must change without their redeploy: a header for many apps, a cart, recommendations.",
+        ],
+      },
+      {
+        p: "In MFE Lite: the shell's `/horizontal` page holds two components that this blog project builds and deploys.",
+      },
+      { h: "Three ways to share a piece of UI" },
+      {
+        list: [
+          "A workspace package shares source code at build time. A change goes live when every app that uses it redeploys, and it costs nothing at run time. Here: `packages/ui`, with the header, `Link` and the badges.",
+          "A vertical zone shares a domain, routed by path. A change goes live when that zone deploys, and the cost is a full page load at the zone's edge. Here: `/blog` and `/docs`.",
+          "A remote component shares a page and its runtime. A change goes live when the remote deploys, while the hosts stay as they are. The cost is more JavaScript and two running apps that depend on each other. Here: the two cards on `/horizontal`.",
+        ],
+      },
+      {
+        p: "Rule of thumb: take the first of the three that gives the independence you need. That is also Vercel's guidance: start vertical, share code through workspace packages, and reach for horizontal only when a piece must update without redeploying the pages that show it.",
+      },
+    ],
+    seeAlso: [{ href: "/lab.html#choose", label: "Lab: which one do you need?" }],
+  },
+  {
     slug: "routing",
     title: "Routing",
     summary: "How one domain is split between two apps, decided before any app code runs.",
@@ -123,7 +169,7 @@ export const DOCS: Doc[] = [
       {
         list: [
           "`/components/latest-posts`: a Server Component. It arrives as HTML and needs no JavaScript.",
-          "`/components/reactions`: a Client Component with a Like button. Its JavaScript is built by the blog and hydrates inside the shell's page, and its count also shows in the shell's header (see the next article).",
+          "`/components/reactions`: a Client Component with a Like button. Its JavaScript is built by the blog and hydrates inside the shell's page, and its count also shows in the shell's header (see \"Sharing state between zones\").",
         ],
       },
       { h: "How it is wired" },
@@ -166,10 +212,62 @@ export const DOCS: Doc[] = [
     ],
   },
   {
+    slug: "state",
+    title: "Where shared state can live",
+    summary: "Five places to keep a value that two apps share, how far each one reaches, and five cases from real projects.",
+    blocks: [
+      {
+        p: "A move between the shell and the blog is a full page load, and a page load discards everything in memory. So the first question about any value two apps share is where it is kept.",
+      },
+      { h: "Five places" },
+      {
+        list: [
+          "Memory (React state, context, module variables): it ends with the page, and the next page starts empty. Good for live UI on one page.",
+          "The URL (path and query): it travels with every link, and every zone's server and client can read it. Good for filters, selection and deep links. It is public, so nothing sensitive goes there.",
+          "Browser storage (`localStorage`, IndexedDB): all zones are one origin, so they read the same keys, but only client code can. Good for preferences and drafts.",
+          "A cookie on the shared domain: the browser sends it with every request, so every zone's server can read it and render the right HTML the first time. Good for a session, a language, a theme.",
+          "A server (an API in front of a database): any zone, any device, any visitor. The source of truth.",
+        ],
+      },
+      {
+        p: "Between zones, memory never crosses. On one page, two apps can share memory too, but only through a module both load as one copy. Browser storage and cookies stay in the browser that wrote them; only a server reaches another visitor.",
+      },
+      { h: "Five cases" },
+      { p: "For each case ask two questions: where does the truth live, and how does each app get it?" },
+      {
+        list: [
+          "Who is signed in: a session cookie on the shared domain. Every zone checks the session itself, through one shared auth package, because each app's proxy sees only its own paths.",
+          "A cart or notification count in the header: a server API that one team owns. Each zone's header calls the API; no zone reads another team's database.",
+          "Theme, language, consent: a cookie. Each zone's server reads it and renders the right HTML the first time. Kept only in `localStorage`, the page would flash.",
+          "Filters, search, the selected item: the URL. Links carry it between zones, the Back button works, and there is nothing to synchronise.",
+          "Two widgets on one page that react to each other: memory, as one shared context or a browser event. Both apps load one copy of the module, or agree on the event's name and payload.",
+        ],
+      },
+      {
+        p: "The sign-in case follows Vercel's microfrontends documentation. The other four are common practice, not something this demo tests: MFE Lite has no sign-in and no server store. It implements the last case, described in the next article.",
+      },
+      { h: "Three things to avoid" },
+      {
+        list: [
+          "`localStorage` as the main channel between apps: a server cannot read it, and nothing says who owns a key.",
+          "One global store that every app reads and writes: it ties the apps' releases together again.",
+          "One zone reading another team's database: the owning team's API is the boundary.",
+        ],
+      },
+      {
+        p: "The rule behind every case: decide where the truth lives first, then how each page gets a copy.",
+      },
+    ],
+    seeAlso: [{ href: "/lab.html#state", label: "Lab: five places, three distances" }],
+  },
+  {
     slug: "shared-state",
     title: "Sharing state between zones",
     summary: "How a Like in a blog component writes into a React context that the shell owns, and how the count survives page loads.",
     blocks: [
+      {
+        p: "This is MFE Lite's own case of shared state: two widgets on one page, built by two apps.",
+      },
       {
         p: "Press Like in the blog's card on `/horizontal` and the ♥ count in the header and the shell's panel follow. The header and the panel are rendered by the shell; the button is built by this blog project. All three read one React context, held by the shell.",
       },
@@ -228,6 +326,7 @@ export const DOCS: Doc[] = [
         ],
       },
     ],
+    seeAlso: [{ href: "/lab.html#one-like", label: "Lab: one Like, two apps" }],
   },
   {
     slug: "deploy",

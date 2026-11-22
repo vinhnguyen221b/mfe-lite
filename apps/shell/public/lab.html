@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>MFE Lite Lab</title>
-<meta name="description" content="Interactive lab: how MFE Lite splits one website between two Next.js apps on Vercel, by URL (vertical) and inside a page (horizontal).">
+<meta name="description" content="Interactive lab: how MFE Lite splits one website between two Next.js apps on Vercel, by URL (vertical) and inside a page (horizontal), and what state the two apps can share.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* Four sheets: Overview, Vertical, Horizontal, Setup. Shell = green, blog = blue, everywhere. */
+/* Five sheets: Overview, Vertical, Horizontal, State, Setup. Shell = green, blog = blue, everywhere. */
 :root{
   --bg:#eef2f6; --surface:#ffffff; --surface-2:#f6f8fb; --ink:#0f1b2d; --muted:#5b6779; --line:#d6dde8; --grid:#e3e8f0;
   --accent:#0b8a6e; --accent-soft:#d8f2ea; --accent-ink:#06624e;
@@ -377,6 +377,33 @@ svg .badge-big{font-size:18px;font-weight:800}
 .rules li div{min-width:0}
 .rules li b{display:block;font-weight:800;margin-bottom:.1rem}
 
+/* overview: which one do you need */
+.choose{display:grid;gap:1rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow)}
+.ch-grid{display:grid;gap:1rem;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);align-items:start}
+@media (max-width:820px){.ch-grid{grid-template-columns:1fr}}
+.ch-left,.ch-right{display:grid;gap:.6rem;align-content:start;min-width:0}
+.ch-right h3{font-size:1.1rem;font-weight:800}
+.ch-what{font-size:.9rem;padding:.55rem .75rem;border-radius:10px;background:var(--surface-2);border:1px dashed var(--line)}
+.ch-rule{font-size:.9rem;padding:.65rem .8rem;border-radius:10px;background:var(--surface-2);border:1px solid var(--line)}
+
+/* state sheet */
+svg .st-bound{stroke:var(--muted);stroke-width:2;stroke-dasharray:3 6;transition:opacity .3s}
+svg .st-node{stroke-width:1.5;transition:fill .25s,stroke .25s}
+svg .st-from{fill:var(--accent-soft);stroke:var(--accent)}
+svg .st-to{fill:var(--surface);stroke:var(--muted);stroke-dasharray:5 4}
+svg .st-to.ok{fill:var(--info-soft);stroke:var(--info);stroke-dasharray:none}
+svg .st-to.ok.any{fill:var(--warn-soft);stroke:var(--warn)}
+svg .st-to.miss{fill:var(--danger-soft);stroke:var(--danger)}
+svg text.st-ok{fill:var(--ok)}
+svg text.st-no{fill:var(--danger)}
+svg .st-hl{fill:transparent;stroke:transparent;stroke-width:1.4;transition:fill .25s,stroke .25s}
+svg .st-row.hit .st-hl{fill:var(--warn-soft);stroke:var(--warn)}
+.hops li.lost .n{background:var(--danger);color:var(--surface)}
+.cs-name{flex:1;min-width:0;font-weight:700;font-size:.86rem;line-height:1.3}
+.cs-panel h3{font-size:1.1rem;font-weight:800}
+.cs-panel .kv{grid-template-columns:minmax(7.5rem,auto) 1fr;gap:.55rem .9rem;font-size:.9rem}
+@media (max-width:560px){.cs-panel .kv{grid-template-columns:1fr;gap:.15rem}.cs-panel .kv dd{margin-bottom:.5rem}}
+
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 @media (max-width:640px){body{font-size:14.5px}h2{font-size:1.35rem}nav.tabs{flex-basis:100%}nav.tabs button{padding:.45rem .65rem}nav.tabs button .ic{display:none}.nv-stats .stat b{font-size:1.1rem}.as-cap{position:static}}
 </style>
@@ -416,6 +443,7 @@ svg .badge-big{font-size:18px;font-weight:800}
     <button role="tab" id="tab-btn-overview" data-tab="overview" aria-selected="true" aria-controls="tab-overview"><svg class="ic"><use href="#i-layers"/></svg>Overview</button>
     <button role="tab" id="tab-btn-vertical" data-tab="vertical" aria-selected="false" aria-controls="tab-vertical"><svg class="ic"><use href="#i-split"/></svg>Vertical</button>
     <button role="tab" id="tab-btn-horizontal" data-tab="horizontal" aria-selected="false" aria-controls="tab-horizontal"><svg class="ic"><use href="#i-panel"/></svg>Horizontal</button>
+    <button role="tab" id="tab-btn-state" data-tab="state" aria-selected="false" aria-controls="tab-state"><svg class="ic"><use href="#i-heart"/></svg>State</button>
     <button role="tab" id="tab-btn-setup" data-tab="setup" aria-selected="false" aria-controls="tab-setup"><svg class="ic"><use href="#i-list"/></svg>Setup</button>
   </nav>
 </div></header>
@@ -427,7 +455,7 @@ svg .badge-big{font-size:18px;font-weight:800}
   <div class="sheet-head">
     <span class="eyebrow"><svg class="ic"><use href="#i-layers"/></svg>1 · Overview</span>
     <h2>Two ways to split one website.</h2>
-    <p class="lead">MFE Lite is two Next.js apps, a <strong>shell</strong> and a <strong>blog</strong>, deployed as two Vercel projects behind one domain, <code>mfe-lite-shell.vercel.app</code>. They share the site in two ways: <strong>by URL</strong> (vertical) and <strong>inside a page</strong> (horizontal). Switch between them below.</p>
+    <p class="lead">MFE Lite is two Next.js apps, a <strong>shell</strong> and a <strong>blog</strong>, deployed as two Vercel projects behind one domain, <code>mfe-lite-shell.vercel.app</code>. They share the site in two ways: <strong>by URL</strong> (vertical) and <strong>inside a page</strong> (horizontal). Switch between them below, then see how to choose between them.</p>
   </div>
 
   <div class="explorer" id="ex">
@@ -474,8 +502,11 @@ svg .badge-big{font-size:18px;font-weight:800}
         <tr><th scope="row">When</th><td class="v">before any app code runs</td><td class="h">while the shell renders the page, on every request</td></tr>
         <tr><th scope="row">In MFE Lite</th><td class="v"><code>/blog</code>, <code>/docs</code> → blog; every other path → shell</td><td class="h"><code>/horizontal</code>: the shell's page with two blog cards</td></tr>
         <tr><th scope="row">The browser runs</th><td class="v">one app's JavaScript per page</td><td class="h">both apps' JavaScript on one page (React is shared)</td></tr>
+        <tr><th scope="row">Shared at run time</th><td class="v">only the domain, so cookies and browser storage; code is shared at build time, through packages</td><td class="h">one document and one runtime: React, plus the modules both apps list as shared</td></tr>
+        <tr><th scope="row">State they can share</th><td class="v">what survives a page load: the URL, cookies, browser storage, a server</td><td class="h">all of that, plus memory, through one shared module</td></tr>
         <tr><th scope="row">Moving around</th><td class="v">a link into the other app loads a new page</td><td class="h">nothing to move: both are already on the page</td></tr>
         <tr><th scope="row">If the blog is down</th><td class="v">blog pages fail; shell pages keep working</td><td class="h">the page still loads; each blog card shows a fallback</td></tr>
+        <tr><th scope="row">Fits</th><td class="v">a team that owns whole pages: marketing, docs, a dashboard, checkout</td><td class="h">a piece that sits on other teams' pages and must change without their redeploy</td></tr>
       </tbody>
     </table>
   </div>
@@ -494,6 +525,33 @@ svg .badge-big{font-size:18px;font-weight:800}
       <p class="muted">The Vercel microfrontends group <code>mfe-lite</code> puts both projects behind the shell's domain. Visitors only ever see <code>mfe-lite-shell.vercel.app</code>.</p>
     </div>
   </div>
+
+  <div class="subhead" id="choose"><h3><span class="k">?</span>Which one do you need?</h3><p>There are three ways to share a piece of UI between teams. They differ in what has to redeploy before visitors see a change. Pick one, then ship a change.</p></div>
+  <div class="choose" id="ch">
+    <div class="bar-row">
+      <div class="seg" role="group" aria-label="Way to share a piece of UI">
+        <button type="button" data-w="pkg" aria-pressed="true">Workspace package</button>
+        <button type="button" data-w="zone" aria-pressed="false">Vertical zone</button>
+        <button type="button" data-w="remote" aria-pressed="false">Remote component</button>
+      </div>
+      <span class="spacer"></span>
+      <button class="btn primary" id="ch-ship" type="button"><svg class="ic"><use href="#i-send"/></svg>Ship a change</button>
+      <button class="btn" id="ch-reset" type="button"><svg class="ic"><use href="#i-reset"/></svg>Reset</button>
+    </div>
+    <div class="ch-grid">
+      <div class="ch-left">
+        <p class="ch-what" id="ch-what"></p>
+        <div class="dp-card z-shell" id="ch-shell"><div class="top"><b>mfe-lite-shell</b><span class="state" id="ch-shell-s"></span></div><div class="meter"><i></i></div></div>
+        <div class="dp-card z-blog" id="ch-blog"><div class="top"><b>mfe-lite-blog</b><span class="state" id="ch-blog-s"></span></div><div class="meter"><i></i></div></div>
+        <div class="nv-msg" id="ch-msg" aria-live="polite"><b></b><span class="muted"></span></div>
+      </div>
+      <div class="ch-right">
+        <h3 id="ch-title"></h3>
+        <dl class="kv" id="ch-kv"></dl>
+      </div>
+    </div>
+    <p class="ch-rule"><strong>Rule of thumb:</strong> take the first of the three that gives you the independence you need. A package costs nothing at run time; a zone costs a full page load at its edge; a remote component costs extra JavaScript and couples two running apps.</p>
+  </div>
 </section>
 
 <!-- ================= VERTICAL ================= -->
@@ -502,6 +560,12 @@ svg .badge-big{font-size:18px;font-weight:800}
     <span class="eyebrow"><svg class="ic"><use href="#i-split"/></svg>2 · Vertical · split by URL</span>
     <h2>Every URL belongs to exactly one app.</h2>
     <p class="lead">Vercel reads one routing table and sends each request to the project that owns its path, before any app code runs. Neither app ever forwards a request to the other.</p>
+  </div>
+
+  <div class="grid cols-3">
+    <div class="card"><h3><svg class="ic"><use href="#i-route"/></svg>How it is composed</h3><p class="muted">A router in front of the apps picks one app for each request, by path. That app returns the whole document. Here the router is Vercel's routing layer.</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-link"/></svg>What the apps share</h3><p class="muted">A domain, so cookies and browser storage. Code only at build time, through <code>packages/ui</code>. No memory at run time: every page load starts fresh.</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-user"/></svg>Where it fits</h3><p class="muted">Teams that own whole sections of a site: marketing, docs, a dashboard, checkout. Not pages that need pieces from several teams.</p></div>
   </div>
 
   <div class="subhead"><h3><span class="k">A</span>How it's set up</h3><p>Five pieces, in the order you would add them. Pick one to see the code.</p></div>
@@ -626,6 +690,12 @@ svg .badge-big{font-size:18px;font-weight:800}
     <p class="lead">By the routing table, <a href="https://mfe-lite-shell.vercel.app/horizontal"><code>/horizontal</code></a> is the shell's page. But two of its cards are built and deployed by the blog: the shell's server fetches them from the blog while it renders, on every request, and sends one page.</p>
   </div>
 
+  <div class="grid cols-3">
+    <div class="card"><h3><svg class="ic"><use href="#i-panel"/></svg>How it is composed</h3><p class="muted">A host page leaves slots. Another app renders the component for each slot and deploys it on its own. Here the shell's server fetches the blog's components while it renders.</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-link"/></svg>What the apps share</h3><p class="muted">One document and one runtime: React, plus every module both apps list as shared. That list is a contract between two deployments.</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-user"/></svg>Where it fits</h3><p class="muted">A piece that sits on other teams' pages and must change without their redeploy: a header for many apps, a cart, recommendations.</p></div>
+  </div>
+
   <div class="subhead"><h3><span class="k">A</span>How it's set up</h3><p>The blog exposes, the routing table connects, the shell consumes. Pick a piece to see the code.</p></div>
   <div class="setup z-blog" id="hs"></div>
 
@@ -708,7 +778,7 @@ svg .badge-big{font-size:18px;font-weight:800}
     <div class="card"><h3><svg class="ic"><use href="#i-link"/></svg>Same road as a visitor</h3><p class="muted">The <code>src</code> is relative. On Vercel it resolves against the production domain, so the shell's server asks <code>mfe-lite-shell.vercel.app/components/…</code> and the routing table sends it to the blog.</p></div>
   </div>
 
-  <div class="subhead"><h3><span class="k">C</span>One Like, two apps</h3><p>The Like button is the blog's code; the ♥ in the header and the provider that holds the count are the shell's. Each app bundles its own packages, so by default each would have its own React context. Both apps list one module as <code>shared</code>, so on this page they use one. Press Like, then turn <code>shared</code> off.</p></div>
+  <div class="subhead" id="one-like"><h3><span class="k">C</span>One Like, two apps</h3><p>The Like button is the blog's code; the ♥ in the header and the provider that holds the count are the shell's. Each app bundles its own packages, so by default each would have its own React context. Both apps list one module as <code>shared</code>, so on this page they use one. Press Like, then turn <code>shared</code> off.</p></div>
   <figure>
     <div class="fig-bar">
       <button class="btn blue" id="ss-like" type="button"><svg class="ic"><use href="#i-heart"/></svg>Like</button>
@@ -805,10 +875,62 @@ svg .badge-big{font-size:18px;font-weight:800}
   </div>
 </section>
 
+<!-- ================= STATE ================= -->
+<section id="tab-state" role="tabpanel" aria-labelledby="tab-btn-state" hidden>
+  <div class="sheet-head">
+    <span class="eyebrow"><svg class="ic"><use href="#i-heart"/></svg>4 · State · what two apps can share</span>
+    <h2>Where a shared value lives decides how far it reaches.</h2>
+    <p class="lead">A move between the shell and the blog is a full page load, and a page load throws away everything in memory. So the first question about any shared value is where it is kept. There are five places.</p>
+  </div>
+
+  <div class="subhead"><h3><span class="k">A</span>Five places, three distances</h3><p>The shell's page holds a count. Each row keeps it in a different place. Choose how far the count has to travel, then press Send and see which rows deliver it.</p></div>
+  <figure>
+    <div class="fig-bar">
+      <div class="seg" role="group" aria-label="How far the count travels" id="st-seg">
+        <button type="button" data-d="page" aria-pressed="false">The blog's card on this page</button>
+        <button type="button" data-d="zone" aria-pressed="true">A page of the blog</button>
+        <button type="button" data-d="browser" aria-pressed="false">Another visitor's browser</button>
+      </div>
+      <span class="spacer"></span>
+      <button class="btn blue" id="st-like" type="button"><svg class="ic"><use href="#i-heart"/></svg>Like</button>
+      <button class="btn primary" id="st-send" type="button"><svg class="ic"><use href="#i-send"/></svg>Send</button>
+      <button class="btn" id="st-reset" type="button"><svg class="ic"><use href="#i-reset"/></svg>Reset</button>
+    </div>
+    <div class="frame">
+    <svg id="st-svg" viewBox="0 0 900 372" role="img" aria-label="Five places to keep a count: memory, the URL, browser storage, a cookie and a server. Each row sends the count from the shell's page to the chosen destination and shows whether it arrives.">
+      <text x="22" y="26" class="lbl">kept in</text>
+      <text x="281" y="26" class="title" text-anchor="middle">the shell's page</text>
+      <text x="458" y="26" class="lbl halo" text-anchor="middle" id="st-bound-t">full page load</text>
+      <text x="590" y="26" class="title" id="st-to-t">a page of the blog</text>
+      <path class="st-bound" id="st-bound" d="M458 36V362"/>
+      <g id="st-rows-g"></g>
+    </svg>
+    </div>
+    <figcaption id="st-cap"></figcaption>
+  </figure>
+  <ol class="hops" id="st-list" aria-live="polite"></ol>
+  <div class="ss-note"><span><strong>Between the two apps' pages, memory never crosses.</strong> On one page, two apps share memory only through a module both load as one copy.</span><span class="muted">Every zone answers on one domain, so for cookies and browser storage the zones are one origin.</span></div>
+
+  <div class="subhead"><h3><span class="k">B</span>Five cases from real projects</h3><p>For each one ask two questions: where does the truth live, and how does each app get it? Pick a case; its row lights up in the figure above.</p></div>
+  <div class="files">
+    <div class="tree" id="cs-tree" role="listbox" aria-label="Cases"></div>
+    <div class="file-panel cs-panel" id="cs-panel"></div>
+  </div>
+  <p class="muted" style="font-size:.86rem;max-width:76ch">The sign-in case follows Vercel's microfrontends documentation. The other four are common practice, not something this demo tests: MFE Lite has no sign-in and no server store.</p>
+
+  <div class="subhead"><h3><span class="k">C</span>Three things to avoid</h3></div>
+  <div class="grid cols-3">
+    <div class="card"><h3><svg class="ic"><use href="#i-alert"/></svg>Storage as a message bus</h3><p class="muted"><code>localStorage</code> can save a value between pages. It is a poor way for two apps to talk: the server cannot read it, and nothing says who owns a key.</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-alert"/></svg>One global store for everything</h3><p class="muted">A store that every app reads and writes ties their releases together again. Share one small value with one owner, not the whole state.</p></div>
+    <div class="card"><h3><svg class="ic"><use href="#i-alert"/></svg>Reading another team's database</h3><p class="muted">The owning team serves the value through an API on the shared domain. The API is the boundary between teams; the database is not.</p></div>
+  </div>
+  <div class="ss-note"><span><strong>The rule:</strong> decide where the truth lives first, then how each page gets a copy.</span><span class="muted">MFE Lite's own example is the last case: one Like button, one count. <button class="linkish" type="button" data-go="horizontal" data-anchor="one-like">See it in Horizontal, part C →</button></span></div>
+</section>
+
 <!-- ================= SETUP ================= -->
 <section id="tab-setup" role="tabpanel" aria-labelledby="tab-btn-setup" hidden>
   <div class="sheet-head">
-    <span class="eyebrow"><svg class="ic"><use href="#i-list"/></svg>4 · Setup</span>
+    <span class="eyebrow"><svg class="ic"><use href="#i-list"/></svg>5 · Setup</span>
     <h2>Where each piece lives.</h2>
     <p class="lead">Every file that takes part, what it does, and which split it serves. Filter by split, then pick a file.</p>
   </div>
@@ -839,6 +961,7 @@ svg .badge-big{font-size:18px;font-weight:800}
     <li class="h"><div><b>Expose from a path the blog owns.</b> A component lives at <code>/components/&lt;name&gt;</code>, and the routing table gives <code>/components</code> to the blog, so a relative <code>src</code> reaches it through the normal routing.</div></li>
     <li class="h"><div><b>Render the host per request and guard every slot.</b> <code>force-dynamic</code> keeps the shell's build independent of the blog; an error boundary and <code>Suspense</code> around each slot keep a failing card from taking the page down.</div></li>
     <li class="s"><div><b>List a context module as <code>shared</code> on both sides.</b> Only <code>react</code>, <code>react-dom</code> and <code>next/*</code> are shared by default; anything else exists once per app, so a context there would split. Across full page loads nothing is shared at runtime: save what must survive.</div></li>
+    <li class="s"><div><b>Decide where the truth lives before you share anything.</b> The URL, a cookie or a server survive a page load; memory never does. Share memory only between pieces on one page, and treat the shared module as an API between two deployments.</div></li>
   </ol>
 
   <div class="subhead" id="try"><h3><span class="k">$</span>Try it yourself</h3><p>Every response carries <code>x-mfe-zone</code>, stamped by the app that answered. Run these against the live site, or locally.</p></div>
@@ -910,8 +1033,8 @@ pnpm test    # routing table, proxy matcher, shared likes</code></pre>
   }
 
   /* ---------- tabs (old links #request, #checks, #cheatsheet still land) ---------- */
-  const TABS = ['overview', 'vertical', 'horizontal', 'setup'];
-  const ALIAS = { request: ['vertical'], checks: ['setup', 'try'], cheatsheet: ['setup'], try: ['setup', 'try'] };
+  const TABS = ['overview', 'vertical', 'horizontal', 'state', 'setup'];
+  const ALIAS = { request: ['vertical'], checks: ['setup', 'try'], cheatsheet: ['setup'], try: ['setup', 'try'], choose: ['overview', 'choose'], 'one-like': ['horizontal', 'one-like'], 'shared-state': ['state'] };
   const tabButtons = $$('nav.tabs button');
   function showTab(raw){
     let name = raw, anchor = null;
@@ -925,6 +1048,13 @@ pnpm test    # routing table, proxy matcher, shared likes</code></pre>
   }
   tabButtons.forEach(b => b.addEventListener('click', () => { showTab(b.dataset.tab); scrollTo(0, 0); }));
   addEventListener('hashchange', () => showTab((location.hash || '').slice(1)));
+  /* in-page links to another sheet: data-go names the sheet, data-anchor an element to scroll to */
+  document.addEventListener('click', e => {
+    const g = e.target.closest('[data-go]'); if (!g || g.closest('#ex')) return;
+    showTab(g.dataset.go);
+    const a = g.dataset.anchor && document.getElementById(g.dataset.anchor);
+    if (a) requestAnimationFrame(() => a.scrollIntoView()); else scrollTo(0, 0);
+  });
 
   /* ---------- setup steppers (vertical + horizontal) ---------- */
   function stepper(rootId, steps){
@@ -1821,6 +1951,185 @@ it("leaves a consumer from a separate copy disconnected", async () => {
     fxRender();
   }));
   fxRender();
+
+  /* ---------- overview: which one do you need ---------- */
+  const CH = {
+    pkg: {
+      what: 'You change the shared header in <code>packages/ui</code>.',
+      title: 'Workspace package: the same code, built into every app',
+      kv: [['What is shared', 'source code, at build time'], ['A change goes live when', 'every app that uses it redeploys'], ['Cost at run time', 'none'], ['Use it for', 'a design system, a header, helpers'], ['In MFE Lite', '<code>packages/ui</code>: the header, <code>Link</code>, the badges']],
+      build: ['shell', 'blog'],
+      done: ['Both projects build', 'The header lives in a package that both apps bundle, so the commit affects both. Each app shows the new header only after its own deployment; until both are live, the two apps can show different versions of it.']
+    },
+    zone: {
+      what: 'You change a page under <code>apps/blog/app/blog</code>.',
+      title: 'Vertical zone: whole pages, deployed alone',
+      kv: [['What is shared', 'a domain, routed by path'], ['A change goes live when', 'that zone deploys'], ['Cost at run time', 'a full page load at the zone\'s edge'], ['Use it for', 'a section with its own team'], ['In MFE Lite', '<code>/blog</code> and <code>/docs</code>. <button class="linkish" type="button" data-go="vertical">See Vertical →</button>']],
+      build: ['blog'],
+      done: ['Only the blog builds', 'The commit touches nothing the shell uses, so Vercel skips the shell. The blog\'s pages show the change; the shell keeps serving the deployment it has.']
+    },
+    remote: {
+      what: 'You change a card under <code>apps/blog/app/components</code>.',
+      title: 'Remote component: a piece of another team\'s page',
+      kv: [['What is shared', 'a page and its runtime'], ['A change goes live when', 'the remote deploys; hosts stay as they are'], ['Cost at run time', 'more JavaScript, and two running apps that depend on each other'], ['Use it for', 'a piece that sits on many teams\' pages'], ['In MFE Lite', 'the two cards on <code>/horizontal</code>. <button class="linkish" type="button" data-go="horizontal">See Horizontal →</button>']],
+      build: ['blog'],
+      done: ['Only the blog builds, and the shell\'s page changes', 'Vercel skips the shell. Yet the shell\'s <code>/horizontal</code> shows the new card on the next request, because the shell fetches the card from the blog every time it renders the page.']
+    }
+  };
+  const ch = { way: 'pkg', busy: false };
+  function chState(app, html){ $('#ch-' + app + '-s').innerHTML = html; }
+  function chRender(){
+    const c = CH[ch.way];
+    pressGroup($('.seg', $('#ch')), 'w', ch.way);
+    $('#ch-what').innerHTML = c.what;
+    $('#ch-title').textContent = c.title;
+    $('#ch-kv').innerHTML = c.kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+    ['shell', 'blog'].forEach(app => { $('#ch-' + app).classList.remove('skip', 'building', 'flash-new'); chState(app, 'live · <span class="ver">v1</span>'); });
+    const m = $('#ch-msg'); m.className = 'nv-msg'; $('b', m).textContent = 'Nothing shipped yet.'; $('span', m).textContent = 'Press “Ship a change” to see which project has to build.';
+    $('#ch-ship').disabled = false;
+  }
+  async function chShip(){
+    if (ch.busy) return; ch.busy = true; $('#ch-ship').disabled = true;
+    const c = CH[ch.way];
+    ['shell', 'blog'].forEach(app => {
+      const card = $('#ch-' + app);
+      if (c.build.includes(app)){ card.classList.add('building'); chState(app, 'building…'); }
+      else { card.classList.add('skip'); chState(app, 'skipped · <span class="ver">v1</span>'); }
+    });
+    await sleep(1700);
+    c.build.forEach(app => { const card = $('#ch-' + app); card.classList.remove('building'); card.classList.add('flash-new'); chState(app, 'live · <span class="ver new">v2</span>'); });
+    const m = $('#ch-msg'); m.className = 'nv-msg ' + (c.build.length > 1 ? 'soft' : 'hard'); $('b', m).textContent = c.done[0]; $('span', m).innerHTML = c.done[1];
+    ch.busy = false;
+  }
+  $$('.seg button', $('#ch')).forEach(b => b.addEventListener('click', () => { if (ch.busy) return; ch.way = b.dataset.w; chRender(); }));
+  $('#ch-ship').addEventListener('click', chShip);
+  $('#ch-reset').addEventListener('click', () => { if (!ch.busy) chRender(); });
+  chRender();
+
+  /* ---------- state: five places, three distances ---------- */
+  const ST_ROWS = [
+    { k: 'mem', name: 'Memory', sub: 'React state, context' },
+    { k: 'url', name: 'URL', sub: 'path and query string' },
+    { k: 'store', name: 'Browser storage', sub: 'localStorage, IndexedDB' },
+    { k: 'cookie', name: 'Cookie', sub: 'on the shared domain' },
+    { k: 'server', name: 'Server', sub: 'an API in front of a database' }
+  ];
+  const ST_OUT = {
+    page: { mem: [true, 'only via one shared module'], url: [true, 'both read the same address'], store: [true, 'same origin, same key'], cookie: [true, 'same domain'], server: [true, 'both call the API'] },
+    zone: { mem: [false, 'gone with the old page'], url: [true, 'it travels with the link'], store: [true, 'one origin for every zone'], cookie: [true, 'sent to the blog\'s server too'], server: [true, 'the blog calls the API'] },
+    browser: { mem: [false, 'never leaves the page'], url: [false, 'unless they open your link'], store: [false, 'kept per browser'], cookie: [false, 'kept per browser'], server: [true, 'one API for everyone'] }
+  };
+  const ST_TO = { page: ['the blog\'s card, same page', 'no page load'], zone: ['a page of the blog', 'full page load'], browser: ['another visitor\'s browser', 'another device'] };
+  const ST_CAP = {
+    page: '<strong>Same page, two apps (horizontal).</strong> Both apps run in one document, so every place is within reach. Memory is the only row with a condition: both apps must load one copy of the module that holds the value. <button class="linkish" type="button" data-go="horizontal" data-anchor="one-like">Horizontal, part C</button> shows what happens when they do not.',
+    zone: '<strong>From a shell page to a blog page (vertical).</strong> The browser loads a new document from the other app. Memory does not survive that; the other four places do. A cookie also reaches the blog\'s server, so the blog can render the value into its HTML; browser storage is only readable once the page runs.',
+    browser: '<strong>Another visitor, or the same visitor on another device.</strong> Browser storage and cookies stay in the browser that wrote them. A link can carry state, but only to someone who opens that link. Only a server reaches everyone.'
+  };
+  const sx = { svg: $('#st-svg'), dist: 'zone', count: 3, busy: false };
+  const stY = i => 72 + i * 64;
+  $('#st-rows-g').innerHTML = ST_ROWS.map((r, i) => { const y = stY(i); return `
+    <g class="st-row" data-k="${r.k}">
+      <rect class="st-hl" x="10" y="${y - 26}" width="212" height="52" rx="10"/>
+      <text x="22" y="${y - 3}" class="title">${r.name}</text><text x="22" y="${y + 14}" class="lbl">${r.sub}</text>
+      <path class="edge" id="st-e-${r.k}" d="M326 ${y}H590"/>
+      <rect class="st-node st-from" x="236" y="${y - 20}" width="90" height="40" rx="10"/><text class="big" id="st-a-${r.k}" x="281" y="${y + 7}" text-anchor="middle"></text>
+      <rect class="st-node st-to" id="st-n-${r.k}" x="590" y="${y - 20}" width="90" height="40" rx="10"/><text class="big" id="st-b-${r.k}" x="635" y="${y + 7}" text-anchor="middle">?</text>
+      <path class="xmark" id="st-x-${r.k}" d="M451 ${y - 7}l14 14M465 ${y - 7}l-14 14" opacity="0"/>
+      <text class="lbl" id="st-v-${r.k}" x="696" y="${y + 4}"></text>
+      <circle class="packet" id="st-p-${r.k}" cx="326" cy="${y}" r="7" opacity="0"/>
+    </g>`; }).join('');
+  function stIdle(){
+    ST_ROWS.forEach(r => {
+      $('#st-a-' + r.k).textContent = sx.count;
+      $('#st-n-' + r.k).setAttribute('class', 'st-node st-to');
+      $('#st-b-' + r.k).textContent = '?';
+      const v = $('#st-v-' + r.k); v.textContent = ''; v.setAttribute('class', 'lbl');
+      $('#st-x-' + r.k).setAttribute('opacity', '0');
+      $('#st-p-' + r.k).setAttribute('opacity', '0');
+      $('#st-e-' + r.k).setAttribute('class', 'edge');
+    });
+    $('#st-list').innerHTML = ST_ROWS.map(r => `<li class="wait" data-k="${r.k}"><span class="n">?</span><div><b>${r.name}</b><span>Press Send.</span></div></li>`).join('');
+  }
+  function stListed(k, ok, why){
+    const li = $(`#st-list li[data-k="${k}"]`);
+    li.className = ok ? 'done blog' : 'lost';
+    $('.n', li).textContent = ok ? '✓' : '✗';
+    $(':scope > div > span', li).textContent = (ok ? 'Arrives: ' : 'Does not arrive: ') + why + '.';
+  }
+  function stRender(){
+    pressGroup($('#st-seg'), 'd', sx.dist);
+    $('#st-to-t').textContent = ST_TO[sx.dist][0];
+    $('#st-bound-t').textContent = ST_TO[sx.dist][1];
+    $('#st-bound').style.opacity = sx.dist === 'page' ? '.18' : '1';
+    $('#st-cap').innerHTML = ST_CAP[sx.dist];
+    stIdle();
+  }
+  async function stSend(){
+    if (sx.busy) return; sx.busy = true; stIdle();
+    const out = ST_OUT[sx.dist], dist = sx.dist;
+    await Promise.all(ST_ROWS.map(async (r, i) => {
+      const y = stY(i), [ok, why] = out[r.k], p = $('#st-p-' + r.k), e = $('#st-e-' + r.k);
+      await sleep(i * 150);
+      e.classList.add('cur');
+      await travel(p, [[326, y], [ok ? 590 : 458, y]], ok ? 760 : 420);
+      e.classList.remove('cur');
+      p.setAttribute('opacity', '0');
+      const v = $('#st-v-' + r.k), b = $('#st-b-' + r.k);
+      if (ok){
+        e.classList.add('lit', 'blog');
+        $('#st-n-' + r.k).setAttribute('class', 'st-node st-to ok' + (dist === 'browser' ? ' any' : ''));
+        b.textContent = sx.count; pop(b);
+        v.textContent = '✓ ' + why; v.setAttribute('class', 'lbl st-ok');
+      } else {
+        e.classList.add('off');
+        $('#st-x-' + r.k).setAttribute('opacity', '1');
+        $('#st-n-' + r.k).setAttribute('class', 'st-node st-to miss');
+        b.textContent = '0';
+        v.textContent = '✗ ' + why; v.setAttribute('class', 'lbl st-no');
+      }
+      stListed(r.k, ok, why);
+    }));
+    sx.busy = false;
+  }
+  $$('#st-seg button').forEach(b => b.addEventListener('click', () => { if (sx.busy) return; sx.dist = b.dataset.d; stRender(); }));
+  $('#st-like').addEventListener('click', () => { if (sx.busy) return; sx.count++; stIdle(); ST_ROWS.forEach(r => pop($('#st-a-' + r.k))); });
+  $('#st-send').addEventListener('click', stSend);
+  $('#st-reset').addEventListener('click', () => { if (sx.busy) return; sx.count = 3; stRender(); });
+  stRender();
+
+  /* ---------- state: cases ---------- */
+  const CASES = [
+    { name: 'Who is signed in', home: 'cookie', truth: 'A session cookie on the shared domain.',
+      how: 'Every zone checks the session itself, through one shared auth package. Each app\'s proxy sees only its own paths, so no zone can rely on another to have checked.',
+      note: 'All zones are one origin, so one <code>HttpOnly</code> cookie works for every zone with no extra setup.',
+      demo: 'Not in MFE Lite: the demo has no sign-in.' },
+    { name: 'Cart or notification count in the header', home: 'server', truth: 'A server API that one team owns.',
+      how: 'Each zone\'s header asks that API, while rendering on the server or from the browser. No zone reads another team\'s database.',
+      note: 'The API is the boundary between teams. It is also what MFE Lite\'s like count would use in production.',
+      demo: 'Not in MFE Lite: the demo has no server store.' },
+    { name: 'Theme, language, consent', home: 'cookie', truth: 'Set once, then sent with every request.',
+      how: 'Each zone\'s server reads it and renders the right HTML the first time.',
+      note: 'Kept only in <code>localStorage</code>, the page would flash: the server renders the default, then the browser corrects it.',
+      demo: 'Not in MFE Lite.' },
+    { name: 'Filters, search, the selected item', home: 'url', truth: 'The path and the query string of the page.',
+      how: 'Links carry it from one zone to the other. Nothing to synchronise, the Back button works, and the link can be sent to someone else.',
+      note: 'The URL is public: nothing sensitive goes there.',
+      demo: 'Not in MFE Lite.' },
+    { name: 'Two widgets on one page that react to each other', home: 'mem', truth: 'One shared context, or a browser event.',
+      how: 'Both apps load one copy of the module that holds the context, or they agree on the name and the payload of an event.',
+      note: 'Only a horizontal split has this case: the two apps must be on the same page.',
+      demo: 'This is MFE Lite\'s Like button. <button class="linkish" type="button" data-go="horizontal" data-anchor="one-like">Horizontal, part C →</button>' }
+  ];
+  const csTree = $('#cs-tree'), csPanel = $('#cs-panel');
+  let csSel = 0;
+  function csRender(light){
+    csTree.innerHTML = CASES.map((c, i) => `<button type="button" role="option" data-i="${i}" aria-selected="${i === csSel}"><span class="cs-name">${c.name}</span></button>`).join('');
+    const c = CASES[csSel], place = ST_ROWS.find(r => r.k === c.home).name;
+    csPanel.innerHTML = `<h3 class="swap">${c.name}</h3><dl class="kv swap"><dt>Keep the truth in</dt><dd><span class="badge warn">${place}</span> ${c.truth}</dd><dt>How each app gets it</dt><dd>${c.how}</dd><dt>Keep in mind</dt><dd>${c.note}</dd><dt>In MFE Lite</dt><dd>${c.demo}</dd></dl>`;
+    if (light) $$('.st-row', sx.svg).forEach(g => g.classList.toggle('hit', g.dataset.k === c.home));
+  }
+  csTree.addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (!b) return; csSel = +b.dataset.i; csRender(true); });
+  csRender(false);
 
   showTab((location.hash || '').slice(1));
 })();

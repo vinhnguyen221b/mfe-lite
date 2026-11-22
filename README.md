@@ -16,7 +16,7 @@ It shows the four things that matter and nothing else. The first three are the *
 | `apps/shell` | `@mfe-lite/shell` | Default app; owns `microfrontends.json`; hosts `/horizontal` | `/` and every path nobody claims | `mfe-lite-shell` |
 | `apps/blog` | `@mfe-lite/blog` | Child zone; serves the embedded components | `/blog`, `/blog/*`, `/docs`, `/docs/*`, `/components/*` | `mfe-lite-blog` |
 
-`packages/ui` holds the shared header. Its links use `Link` from `@vercel/microfrontends/next/client`, so a link inside a zone stays a client-side navigation and a link into the other zone becomes a full navigation, and a small badge shows which zone rendered the page. It also holds `@mfe-lite/ui/likes`, the small browser contract both zones use to share a like count.
+`packages/ui` holds the shared header. Its links use `Link` from `@vercel/microfrontends/next/client`, so a link inside a zone stays a client-side navigation and a link into the other zone becomes a full navigation, and a small badge shows which zone rendered the page. It also holds `@mfe-lite/ui/likes`, the like count's React context: each zone's layout provides it, and on `/horizontal` the two apps share one copy of it.
 
 ## Request flow (vertical)
 
@@ -55,7 +55,38 @@ What it costs, measured on production:
 - Preview deployments are behind Deployment Protection, and outside production a relative `src` resolves against the branch URL, so `/horizontal` is only demonstrated on production.
 - `remote-components` is a 0.x package; its API may still change.
 
+## Which split, and when
+
+Both splits answer one question, how several teams share one site, at a different size of piece.
+
+- **Vertical: every page has one owner.** A router in front of the apps picks one app for each request, by path, and that app returns the whole document. At run time the apps share only the domain, so cookies and browser storage; code is shared at build time, through packages; memory is not shared at all. It fits teams that own whole sections of a site: marketing, docs, a dashboard, checkout.
+- **Horizontal: one page, several owners.** A host page leaves slots, and another app renders the component for each slot and deploys it on its own. The apps share one document and one runtime: React, plus every module both list as shared. That list is a contract between two deployments. It fits a piece that sits on other teams' pages and must change without their redeploy: a header for many apps, a cart, recommendations.
+
+A third way needs no microfrontends at all:
+
+| | Workspace package | Vertical zone | Remote component |
+|---|---|---|---|
+| What is shared | Source code, at build time | A domain, routed by path | A page and its runtime |
+| A change goes live when | Every app that uses it redeploys | That zone deploys | The remote deploys; hosts stay as they are |
+| Cost at run time | None | A full page load at the zone's edge | More JavaScript, and two running apps that depend on each other |
+| Use it for | A design system, a header, helpers | A section with its own team | A piece that sits on many teams' pages |
+| In MFE Lite | `packages/ui`: the header, `Link`, the badges | `/blog` and `/docs` | The two cards on `/horizontal` |
+
+Rule of thumb: take the first of the three that gives the independence you need. That matches Vercel's guidance: start vertical, share code through workspace packages, and reach for horizontal only when a piece must update without redeploying the pages that show it.
+
 ## Shared state between zones
+
+A move between two zones is a full page load, and a page load discards everything in memory. So what two apps can share depends on where the value is kept:
+
+| Kept in | Does it cross a zone boundary? | Good for |
+|---|---|---|
+| Memory: React state, context | **No.** It ends with the page | Live UI on one page |
+| The URL: path and query | Yes: it travels with every link | Filters, selection, deep links |
+| Browser storage: `localStorage`, IndexedDB | Yes: all zones are one origin. Client code only | Preferences, drafts |
+| A cookie on the shared domain | Yes: the browser sends it to every zone's server | Session, language, theme |
+| A server: an API in front of a database | Yes: any zone, any device, any visitor | The source of truth |
+
+Between zones, memory never crosses. On one page, the horizontal split, two apps can share memory too, but only through a module both load as one copy. MFE Lite demonstrates that last case, below. Sign-in, header counts behind an API, theme cookies and URL filters are described as cases in [docs/architecture.md](docs/architecture.md#state-cases-in-practice); the demo does not implement them.
 
 ```mermaid
 flowchart LR
@@ -155,8 +186,8 @@ Blog assets load under `/vc-ap-<hash>/_next/...`, the hashed prefix `withMicrofr
 
 ## Learn more
 
-- [docs/architecture.md](docs/architecture.md): request flow, the horizontal page, shared state, the two projects and their settings, local vs production.
-- [apps/shell/public/lab.html](apps/shell/public/lab.html), live at https://mfe-lite-shell.vercel.app/lab.html: a self-contained interactive lab served by the shell as a static file. It explains how the vertical and the horizontal split are set up and how they work: a vertical/horizontal explorer, a request router you can type any path into, the asset prefix, cross-zone navigation, `/horizontal` assembled step by step (with the blog down and an X-ray view), the shared like count, a blog-only deploy, and a map of every file involved.
+- [docs/architecture.md](docs/architecture.md): the two splits in theory, request flow, the horizontal page, where shared state can live and cases from real projects, the shared like count, the two projects and their settings, local vs production.
+- [apps/shell/public/lab.html](apps/shell/public/lab.html), live at https://mfe-lite-shell.vercel.app/lab.html: a self-contained interactive lab served by the shell as a static file. It explains how the vertical and the horizontal split are set up and how they work, in five sheets. Overview: a vertical/horizontal explorer and a chooser between a workspace package, a vertical zone and a remote component. Vertical: a request router you can type any path into, the asset prefix, cross-zone navigation. Horizontal: `/horizontal` assembled step by step (with the blog down and an X-ray view), the shared like count, a blog-only deploy. State: five places to keep a shared value and how far each reaches, with five cases from real projects. Setup: a map of every file involved.
 
 ## License
 
