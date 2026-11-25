@@ -417,3 +417,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .flow li .tag::before { content: counter(flow, decimal-leading-zero); color: var(--accent); margin-right: 0.15rem; }
 .flow li p { margin: 0.5rem 0 0; font-size: 0.93rem; color: var(--muted); }
 .board > section > .section-title { margin-top: 1.25rem; }
+
+/* Diagrams in articles. */
+.figure { margin: 1.5rem 0; padding: 0.75rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.figure svg { display: block; height: auto; }
+.figure figcaption { margin-top: 0.5rem; font-size: 0.88rem; color: var(--muted); }

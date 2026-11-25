@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DOCS, type Block } from "@/lib-posts";
+import { Figure } from "./figures";
 
 export function generateStaticParams() {
   return DOCS.map(({ slug }) => ({ slug }));
@@ -23,6 +24,7 @@ function Inline({ text }: { text: string }) {
 }
 
 function render(block: Block, i: number) {
+  if ("figure" in block) return <Figure key={i} id={block.figure} caption={block.caption} />;
   if ("h" in block) return <h2 key={i}>{block.h}</h2>;
   if ("code" in block)
     return (

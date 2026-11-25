@@ -4,7 +4,12 @@ export const POSTS = [
 ];
 
 // Docs content. Text between backticks renders as inline code.
-export type Block = { p: string } | { h: string } | { code: string } | { list: string[] };
+export type Block =
+  | { p: string }
+  | { h: string }
+  | { code: string }
+  | { list: string[] }
+  | { figure: "likes-same-page" | "likes-between-pages"; caption: string };
 
 export type Doc = {
   slug: string;
@@ -297,11 +302,19 @@ export const DOCS: Doc[] = [
         ].join("\n"),
       },
       {
+        figure: "likes-same-page",
+        caption: "On the same page, the blog's button writes into the shell's provider. Nothing is stored or sent.",
+      },
+      {
         p: "`apps/shell/__tests__/likes.test.ts` renders a provider and a consumer: from the same copy of the module they connect, from two separate copies (each zone bundling its own) the consumer gets `like: null`.",
       },
       { h: "Between pages" },
       {
         p: "Moving between a shell page and a blog page, or reloading, is a full page load: a new React tree and a new provider. The provider saves the count in `localStorage` under `mfe-lite:likes` and loads it when it mounts. Both zones are served from one origin, so they read the same key, and the browser's `storage` event updates other tabs.",
+      },
+      {
+        figure: "likes-between-pages",
+        caption: "Across pages, the two apps never talk to each other. They read and write the same key.",
       },
       { h: "What is shared, what is saved" },
       {
